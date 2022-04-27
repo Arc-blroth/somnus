@@ -1,0 +1,22 @@
+[versions]
+kotlin = "1.6.21"
+ktlint = "10.2.1"
+shadow = "7.1.2"
+slf4j = "1.7.36"
+kord = "0.8.0-M13"
+sqlite-jdbc = "3.36.0.3"
+exposed = "0.38.2"
+
+[plugins]
+kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+kotlin-plugin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlint" }
+shadow = { id = "com.github.johnrengelman.shadow", version.ref = "shadow" }
+
+[libraries]
+slf4j-simple = { module = "org.slf4j:slf4j-simple", version.ref = "slf4j" }
+kord-core = { module = "dev.kord:kord-core", version.ref = "kord" }
+sqlite-jdbc = { module = "org.xerial:sqlite-jdbc", version.ref = "sqlite-jdbc" }
+exposed-core = { module = "org.jetbrains.exposed:exposed-core", version.ref = "exposed" }
+exposed-dao = { module = "org.jetbrains.exposed:exposed-dao", version.ref = "exposed" }
+exposed-jdbc = { module = "org.jetbrains.exposed:exposed-jdbc", version.ref = "exposed" }
