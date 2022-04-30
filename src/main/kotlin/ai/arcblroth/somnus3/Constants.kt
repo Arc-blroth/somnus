@@ -9,13 +9,14 @@ object Constants {
     val ERROR_COLOR = Color(0xf54242)
 
     // Text
+    const val PREFIX = "!"
     const val FOOTER = "Somnus by Arc'blroth and Drshadoww"
     const val FIRE_DISCLAIMER_FOOTER = "Data provided by CalFire. May not be up-to-date."
     const val BLANK_FIELD = "\u200b"
 
     // Message Filters
-    val MENTION_FILTER = Regex("<@[!&]?\\d*?>")
-    val CHANNEL_FILTER = Regex("<#\\d*?>")
+    val MENTION_FILTER = Regex("<@([!&]?)(\\d*?)>")
+    val CHANNEL_FILTER = Regex("<#(\\d*?)>")
     val EMOJI_FILTER = Regex("<:.*?:\\d*?>")
     val TIMESTAMP_FILTER = Regex("<t:\\d*?(:.)?>")
     val PROPERTIES_REGEX = Regex("```(properties)?\\n((.|\\n)*)\\n```")

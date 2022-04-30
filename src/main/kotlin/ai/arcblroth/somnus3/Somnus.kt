@@ -1,5 +1,6 @@
 package ai.arcblroth.somnus3
 
+import ai.arcblroth.somnus3.commands.registerCommandCallbacks
 import dev.kord.common.entity.ActivityType
 import dev.kord.core.Kord
 import dev.kord.core.behavior.channel.createMessage
@@ -53,13 +54,19 @@ class Somnus(val config: Config) {
         }
     }
 
-    private fun registerCallbacks(kord: Kord) {
+    private suspend fun registerCallbacks(kord: Kord) {
+        val commands = registerCommandCallbacks(kord, config)
+
         kord.on<MessageCreateEvent> {
             val author = message.author
             if (author != null && allowOnServer(message)) {
-                val command = message.content
-                val tokens = command.trim().split(Regex("\\s+?"))
+                val command = message.content.trim()
+                val tokens = command.split(Regex("\\s+?"))
                 handleWittyResponses(message, author, command, tokens)
+
+                if (command.startsWith(Constants.PREFIX)) {
+                    commands.handleMessage(message, author, tokens[0].substring(1), tokens)
+                }
             }
         }
     }
