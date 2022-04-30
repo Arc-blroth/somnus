@@ -49,6 +49,10 @@ tasks {
 
     jar.get().enabled = false
     assemble.get().dependsOn(shadowJar.get())
+
+    ktlint {
+        disabledRules.set(setOf("no-wildcard-imports"))
+    }
 }
 
 publishing {
