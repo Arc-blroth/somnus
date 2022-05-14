@@ -1,13 +1,13 @@
 package ai.arcblroth.somnus3.commands
 
+import dev.kord.core.entity.Guild
 import dev.kord.core.entity.User
 import dev.kord.rest.builder.message.create.MessageCreateBuilder
 
-typealias SlashCommandAction = suspend SlashCommandExecutionBuilder.(author: User, options: Map<String, Any>) -> Unit
+typealias SlashCommandAction = suspend SlashCommandExecutionBuilder.(author: User, guild: Guild?, options: Map<String, Any>) -> Unit
 
 @SomnusCommandsDsl
 class SlashCommandBuilder {
-    var name: String? = null
     var description: String? = null
     var options: List<Option<*>> = listOf()
     var execute: SlashCommandAction? = null

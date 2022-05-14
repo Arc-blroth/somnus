@@ -31,11 +31,10 @@ class CommandRegistry private constructor(private val kord: Kord, private val co
      * If `user` is set to true and the command takes a single user argument,
      * it will additionally be registered as a user command for consistency.
      */
-    fun slash(user: Boolean = true, builder: SlashCommandBuilder.() -> Unit) {
+    fun slash(name: String, user: Boolean = true, builder: SlashCommandBuilder.() -> Unit) {
         check(!finished)
 
         val builderObj = SlashCommandBuilder().also(builder)
-        val name = requireNotNull(builderObj.name) { "Slash command must have a name!" }
         val desc = requireNotNull(builderObj.description) { "Slash command must have a description!" }
         val exec = requireNotNull(builderObj.execute) { "Slash command must actually do something!" }
         val command = SlashCommand(name, desc, builderObj.options, exec)
@@ -43,6 +42,17 @@ class CommandRegistry private constructor(private val kord: Kord, private val co
 
         if (user && command.options.size == 1 && command.options[0] is UserOption) {
             userCommands[name] = command
+        }
+    }
+
+    /**
+     * Registers a new slash command with one or more aliases.
+     */
+    fun slash(name: String, vararg aliases: String, user: Boolean = true, builder: SlashCommandBuilder.() -> Unit) {
+        slash(name, user, builder)
+        val command = slashCommands[name]!!
+        aliases.forEach {
+            slashCommands[it] = command.copy(name = it)
         }
     }
 
@@ -113,7 +123,7 @@ class CommandRegistry private constructor(private val kord: Kord, private val co
                             override fun respond(builder: MessageCreateBuilder.() -> Unit) {
                                 this@respondPublic.builder()
                             }
-                        }.(slashCommand.execute)(interaction.user, options)
+                        }.(slashCommand.execute)(interaction.user, interaction.getGuildOrNull(), options)
                     }
                 }
             }
@@ -145,7 +155,7 @@ class CommandRegistry private constructor(private val kord: Kord, private val co
                     override fun respond(builder: MessageCreateBuilder.() -> Unit) {
                         this@actual.builder()
                     }
-                }.(slashCommand.execute)(author, options)
+                }.(slashCommand.execute)(author, message.getGuildOrNull(), options)
             }
         }
     }

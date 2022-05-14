@@ -42,5 +42,6 @@ object Constants {
     const val GAME_IMG = "https://media.discordapp.net/attachments/617461750203416576/700757068130418739/unknown.png"
 
     const val WORSHIP_COST = 7.0
+    const val SWAG_NAME = "Sr. Gomez"
     const val SWAG_IMG = "https://media.discordapp.net/attachments/756279756374409236/798971096996642816/image0.jpg"
 }

@@ -1,6 +1,8 @@
 package ai.arcblroth.somnus3.data
 
 import org.jetbrains.exposed.sql.Database
+import org.jetbrains.exposed.sql.SchemaUtils
+import org.jetbrains.exposed.sql.transactions.transaction
 import java.nio.file.Paths
 
 private const val DB_FILE = ".data/sqlite.db"
@@ -12,5 +14,8 @@ fun initDatabase() {
         databaseFile.createNewFile()
     }
     Database.connect("jdbc:sqlite:$DB_FILE")
+    transaction {
+        SchemaUtils.create(PlayerDataTable, PreferencesDataTable, CounterDataTable)
+    }
     println("PlayerData and CounterData tables created!")
 }

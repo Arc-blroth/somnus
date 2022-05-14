@@ -1,28 +1,31 @@
 package ai.arcblroth.somnus3.data
 
-import org.jetbrains.exposed.sql.Table
+import dev.kord.common.entity.Snowflake
+import org.jetbrains.exposed.dao.IntEntity
+import org.jetbrains.exposed.dao.IntEntityClass
+import org.jetbrains.exposed.dao.id.EntityID
 
-open class PlayerSnowflakeIdTable() : SnowflakeIdTable(columnName = "playerSnowflake") {
-    val playerSnowflake by ::id
+class PlayerData(id: EntityID<Snowflake>) : SnowflakeEntity(id) {
+    companion object : SnowflakeEntityClass<PlayerData>(PlayerDataTable)
+
+    var lastDailyRewardTime by PlayerDataTable.lastDailyRewardTime
+    var sleepPoints by PlayerDataTable.sleepPoints
+    var moneyPoints by PlayerDataTable.moneyPoints
+    var knowledgePoints by PlayerDataTable.knowledgePoints
+    var hitPoints by PlayerDataTable.hitPoints
+    var swagPoints by PlayerDataTable.swagPoints
+    var gamePoints by PlayerDataTable.gamePoints
 }
 
-object PlayerData : PlayerSnowflakeIdTable() {
-    val lastDailyRewardTime = long("lastDailyRewardTime")
-    val sleepPoints = integer("sleepPoints")
-    val moneyPoints = integer("moneyPoints")
-    val knowledgePoints = integer("knowledgePoints")
-    val hitPoints = integer("hitPoints")
-    val swagPoints = integer("swagPoints")
-    val gamePoints = integer("gamePoints")
+class PreferencesData(id: EntityID<Snowflake>) : SnowflakeEntity(id) {
+    companion object : SnowflakeEntityClass<PreferencesData>(PreferencesDataTable)
+
+    var showDeathMessages by PreferencesDataTable.showDeathMessages
 }
 
-object PreferencesData : PlayerSnowflakeIdTable() {
-    val showDeathMessages = bool("showDeathMessages").default(true)
-}
+class CounterData(id: EntityID<Int>) : IntEntity(id) {
+    companion object : IntEntityClass<CounterData>(CounterDataTable)
 
-object CounterData : Table() {
-    // technically `name` should never exceed 4000 characters, but for
-    // backwards compatibility we use TEXT rather than VARCHAR here
-    val name = text("name")
-    val counter = long("counter")
+    var name by CounterDataTable.name
+    var counter by CounterDataTable.counter
 }

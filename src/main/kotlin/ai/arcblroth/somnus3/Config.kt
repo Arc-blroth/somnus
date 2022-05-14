@@ -29,8 +29,8 @@ data class Config(
     // the list of all servers that Somnus will function in
     val allowedServers: List<Snowflake> = listOf(),
 
-    // a map of server -> image urls for the !worship command
-    val worshipImages: Map<Snowflake, String> = mapOf(),
+    // a map of server -> { name, url } for the !worship command
+    val worshipConfig: Map<Snowflake, WorshipConfig> = mapOf(),
 
     // all users allowed to execute "sudo" commands
     val sudoers: List<Snowflake> = listOf(),
@@ -44,6 +44,12 @@ data class Config(
     val gamingChannelId: Snowflake? = null,
     val leagueAppIds: List<Snowflake> = listOf(Snowflake(356869127241072640L), Snowflake(401518684763586560L)),
 ) {
+    @Serializable
+    data class WorshipConfig(
+        val name: String,
+        val url: String,
+    )
+
     init {
         if (enableActivityDetectors) {
             requireNotNull(leagueChannelId) { "A valid League channel must be specified for activity detectors to work!" }
