@@ -14,7 +14,7 @@ sealed class Option<T>(
     val optional: Boolean = false,
     val onParseFailure: ParseFailureCallback? = null,
 ) {
-    fun toOptionsBuilder(): OptionsBuilder = toOptionsBuilderInner().apply { required = optional }
+    fun toOptionsBuilder(): OptionsBuilder = toOptionsBuilderInner().apply { required = !optional }
     protected abstract fun toOptionsBuilderInner(): OptionsBuilder
     abstract fun parse(token: String): T?
 }
