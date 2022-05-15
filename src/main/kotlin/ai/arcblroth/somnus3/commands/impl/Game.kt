@@ -162,6 +162,29 @@ fun CommandRegistry.registerGameCommands(kord: Kord, config: Config) {
             }
         }
     }
+
+    slash("worship", "simp") {
+        description = "This is definitely not a cult."
+        execute = { author, guild, _ ->
+            withPlayerData(author.id) {
+                val random = Math.random()
+                val swagGained = floor(random * (Constants.GAME_REWARD + gamePoints) + 1).toInt()
+                val sleepLost = floor(random * Constants.WORSHIP_COST + 1).toInt()
+                swagPoints += swagGained
+                sleepPoints -= sleepLost
+
+                respond {
+                    somnusEmbed {
+                        val worshipConfig = guild?.let { config.worshipConfig[guild.id] }
+                            ?: Config.WorshipConfig(Constants.SWAG_NAME, Constants.SWAG_IMG)
+                        thumbnail { url = worshipConfig.url }
+                        title = "${author.username} worshipped ${worshipConfig.name}"
+                        description = "and gained $swagGained swag points at the cost of $sleepLost sleep points."
+                    }
+                }
+            }
+        }
+    }
 }
 
 suspend fun update(msg: Message, author: User) {
