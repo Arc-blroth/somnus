@@ -8,8 +8,14 @@ import dev.kord.rest.builder.message.create.MessageCreateBuilder
 typealias ParseFailureCallback = MessageCreateBuilder.(String) -> Unit
 
 @SomnusCommandsDsl
-sealed class Option<T>(val name: String, val description: String, val onParseFailure: ParseFailureCallback? = null) {
-    abstract fun toOptionsBuilder(): OptionsBuilder
+sealed class Option<T>(
+    val name: String,
+    val description: String,
+    val optional: Boolean = false,
+    val onParseFailure: ParseFailureCallback? = null,
+) {
+    fun toOptionsBuilder(): OptionsBuilder = toOptionsBuilderInner().apply { required = optional }
+    protected abstract fun toOptionsBuilderInner(): OptionsBuilder
     abstract fun parse(token: String): T?
 }
 
@@ -17,9 +23,10 @@ class StringOption(
     name: String,
     description: String,
     val choices: Map<String, String>? = null,
+    optional: Boolean = false,
     onParseFailure: ParseFailureCallback?,
-) : Option<String>(name, description, onParseFailure) {
-    override fun toOptionsBuilder() = StringChoiceBuilder(name, description).also { builder ->
+) : Option<String>(name, description, optional, onParseFailure) {
+    override fun toOptionsBuilderInner() = StringChoiceBuilder(name, description).also { builder ->
         this@StringOption.choices?.forEach {
             builder.choice(it.key, it.value)
         }
@@ -32,9 +39,10 @@ class LongOption(
     name: String,
     description: String,
     val choices: Map<String, Long>? = null,
+    optional: Boolean = false,
     onParseFailure: ParseFailureCallback?,
-) : Option<Long>(name, description, onParseFailure) {
-    override fun toOptionsBuilder() = IntegerOptionBuilder(name, description).also { builder ->
+) : Option<Long>(name, description, optional, onParseFailure) {
+    override fun toOptionsBuilderInner() = IntegerOptionBuilder(name, description).also { builder ->
         this@LongOption.choices?.forEach {
             builder.choice(it.key, it.value)
         }
@@ -50,9 +58,10 @@ class DoubleOption(
     name: String,
     description: String,
     val choices: Map<String, Double>? = null,
+    optional: Boolean = false,
     onParseFailure: ParseFailureCallback?,
-) : Option<Double>(name, description, onParseFailure) {
-    override fun toOptionsBuilder() = NumberOptionBuilder(name, description).also { builder ->
+) : Option<Double>(name, description, optional, onParseFailure) {
+    override fun toOptionsBuilderInner() = NumberOptionBuilder(name, description).also { builder ->
         this@DoubleOption.choices?.forEach {
             builder.choice(it.key, it.value)
         }
@@ -67,9 +76,10 @@ class DoubleOption(
 class BooleanOption(
     name: String,
     description: String,
+    optional: Boolean = false,
     onParseFailure: ParseFailureCallback?,
-) : Option<Boolean>(name, description, onParseFailure) {
-    override fun toOptionsBuilder() = BooleanBuilder(name, description)
+) : Option<Boolean>(name, description, optional, onParseFailure) {
+    override fun toOptionsBuilderInner() = BooleanBuilder(name, description)
 
     override fun parse(token: String) = token.toBooleanStrictOrNull()
 }
@@ -77,9 +87,10 @@ class BooleanOption(
 class UserOption(
     name: String,
     description: String,
+    optional: Boolean = false,
     onParseFailure: ParseFailureCallback?,
-) : Option<Snowflake>(name, description, onParseFailure) {
-    override fun toOptionsBuilder() = UserBuilder(name, description)
+) : Option<Snowflake>(name, description, optional, onParseFailure) {
+    override fun toOptionsBuilderInner() = UserBuilder(name, description)
 
     override fun parse(token: String): Snowflake? {
         val groups = Constants.MENTION_FILTER.find(token)?.groups ?: return null
@@ -95,9 +106,10 @@ class UserOption(
 class RoleOption(
     name: String,
     description: String,
+    optional: Boolean = false,
     onParseFailure: ParseFailureCallback?,
-) : Option<Snowflake>(name, description, onParseFailure) {
-    override fun toOptionsBuilder() = RoleBuilder(name, description)
+) : Option<Snowflake>(name, description, optional, onParseFailure) {
+    override fun toOptionsBuilderInner() = RoleBuilder(name, description)
 
     override fun parse(token: String): Snowflake? {
         val groups = Constants.MENTION_FILTER.find(token)?.groups ?: return null
@@ -113,9 +125,10 @@ class RoleOption(
 class ChannelOption(
     name: String,
     description: String,
+    optional: Boolean = false,
     onParseFailure: ParseFailureCallback?,
-) : Option<Snowflake>(name, description, onParseFailure) {
-    override fun toOptionsBuilder() = ChannelBuilder(name, description)
+) : Option<Snowflake>(name, description, optional, onParseFailure) {
+    override fun toOptionsBuilderInner() = ChannelBuilder(name, description)
 
     override fun parse(token: String): Snowflake? {
         val groups = Constants.CHANNEL_FILTER.find(token)?.groups ?: return null

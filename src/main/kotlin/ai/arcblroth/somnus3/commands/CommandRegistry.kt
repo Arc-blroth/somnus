@@ -37,7 +37,19 @@ class CommandRegistry private constructor(private val kord: Kord, private val co
         val builderObj = SlashCommandBuilder().also(builder)
         val desc = requireNotNull(builderObj.description) { "Slash command must have a description!" }
         val exec = requireNotNull(builderObj.execute) { "Slash command must actually do something!" }
-        val command = SlashCommand(name, desc, builderObj.options, exec)
+        var numRequiredOptions = 0
+        var foundOptionalArg = false
+        for (option in builderObj.options) {
+            when (option.optional) {
+                true -> foundOptionalArg = true
+                false -> {
+                    check(!foundOptionalArg) { "All required options must be listed before optional options!" }
+                    numRequiredOptions++
+                }
+            }
+        }
+
+        val command = SlashCommand(name, desc, builderObj.options, numRequiredOptions, exec)
         slashCommands[name] = command
 
         if (user && command.options.size == 1 && command.options[0] is UserOption) {
@@ -74,7 +86,6 @@ class CommandRegistry private constructor(private val kord: Kord, private val co
                         input(command.name, command.description) {
                             options = command.options
                                 .map(Option<*>::toOptionsBuilder)
-                                .onEach { it.required = true }
                                 .toMutableList()
                         }
                     }
@@ -114,7 +125,7 @@ class CommandRegistry private constructor(private val kord: Kord, private val co
                         }
                         else -> {
                             interaction.data.data.options.value?.associate {
-                                it.name to (it.value.value?.value ?: error("Somnus doesn't support optional arguments!"))
+                                it.name to it.value.value?.value
                             }.orEmpty()
                         }
                     }
@@ -134,8 +145,11 @@ class CommandRegistry private constructor(private val kord: Kord, private val co
     // assumes that the message has been sent from an allowed server
     internal suspend fun handleMessage(message: Message, author: User, commandPrefix: String, tokens: List<String>) {
         val slashCommand = slashCommands[commandPrefix] ?: return
-        if (tokens.size - 1 >= slashCommand.options.size) {
+        if (tokens.size - 1 >= slashCommand.numRequiredOptions) {
             val options = slashCommand.options.withIndex().associate {
+                if (it.index + 1 >= tokens.size) {
+                    return@associate it.value.name to null
+                }
                 val token = tokens[it.index + 1]
                 val maybeParsed = it.value.parse(token)
                 if (maybeParsed != null) {

@@ -1,6 +1,7 @@
 package ai.arcblroth.somnus3.commands.impl
 
 import ai.arcblroth.somnus3.Constants
+import ai.arcblroth.somnus3.commands.UserOption
 import dev.kord.core.entity.User
 import dev.kord.rest.builder.message.EmbedBuilder
 import dev.kord.rest.builder.message.create.MessageCreateBuilder
@@ -26,3 +27,20 @@ fun MessageCreateBuilder.somnusEmbed(thumbnailUser: User? = null, block: EmbedBu
         }
     }
 }
+
+/**
+ * Error message for malformed [UserOption]s.
+ */
+fun wrongUserMessage(builder: MessageCreateBuilder, target: String) {
+    builder.somnusEmbed {
+        color = Constants.ERROR_COLOR
+        title = "Could not find target user."
+        description = "Did you perhaps copy the wrong id? (got snowflake `$target`)"
+    }
+}
+
+/**
+ * Error message for malformed [UserOption]s.
+ */
+@JvmName("wrongUserMessageExt")
+fun MessageCreateBuilder.wrongUserMessage(target: String) = wrongUserMessage(this, target)

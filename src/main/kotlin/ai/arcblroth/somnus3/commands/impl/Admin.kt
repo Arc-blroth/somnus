@@ -13,14 +13,12 @@ fun CommandRegistry.registerAdminCommands(kord: Kord, config: Config) {
             UserOption(
                 name = "victim",
                 description = "Target of this beaning.",
-                onParseFailure = {
-                    content = "Could not find target user."
-                }
+                optional = true,
+                onParseFailure = ::wrongUserMessage
             )
         )
-        execute = { _, _, options ->
-            val victim = kord.getUser(options["victim"] as Snowflake)
-            if (victim != null) {
+        execute = { author, _, options ->
+            withOptionalUserArg(kord, options["victim"] as Snowflake?, author) { victim ->
                 respond {
                     somnusEmbed(thumbnailUser = victim) {
                         title = "${victim.username} has Died?"
