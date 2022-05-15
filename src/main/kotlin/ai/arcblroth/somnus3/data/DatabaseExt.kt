@@ -5,6 +5,8 @@ import kotlinx.datetime.Clock
 import org.jetbrains.exposed.dao.Entity
 import org.jetbrains.exposed.dao.EntityClass
 import org.jetbrains.exposed.dao.id.IdTable
+import org.jetbrains.exposed.sql.Op
+import org.jetbrains.exposed.sql.SqlExpressionBuilder
 import org.jetbrains.exposed.sql.transactions.transaction
 
 /**
@@ -17,6 +19,9 @@ fun withPlayerData(player: Snowflake, block: PlayerData.() -> Unit) =
 fun withPreferencesData(player: Snowflake, block: PreferencesData.() -> Unit) =
     withData(PreferencesData, PreferencesDataTable, player, { showDeathMessages = true }, block)
 
+fun withCounterData(counterName: String, block: CounterData.() -> Unit) =
+    withData(CounterData, CounterDataTable, null, { name = counterName; counter = 0 }, block, { it.name eq counterName })
+
 /**
  * Opens a database transaction to `UPDATE` some data type.
  * If existing data doesn't exist in the database, new data will be inserted.
@@ -24,16 +29,17 @@ fun withPreferencesData(player: Snowflake, block: PreferencesData.() -> Unit) =
 private inline fun <reified Key, reified Table, reified DataType, reified DataTypeClass> withData(
     dataTypeClass: DataTypeClass,
     table: Table,
-    key: Key,
+    key: Key?,
     crossinline defaultBuilder: DataType.() -> Unit,
     noinline block: DataType.() -> Unit,
+    crossinline finder: SqlExpressionBuilder.(Table) -> Op<Boolean> = { it.id eq key },
 )
     where Key : Comparable<Key>,
           Table : IdTable<Key>,
           DataType : Entity<Key>,
           DataTypeClass : EntityClass<Key, DataType> {
     transaction {
-        val data = dataTypeClass.find { table.id eq key }.singleOrNull()
+        val data = dataTypeClass.find { finder(table) }.singleOrNull()
 
         @Suppress("IfThenToElvis")
         if (data == null) {

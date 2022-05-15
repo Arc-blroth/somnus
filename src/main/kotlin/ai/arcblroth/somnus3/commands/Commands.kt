@@ -2,6 +2,7 @@ package ai.arcblroth.somnus3.commands
 
 import ai.arcblroth.somnus3.Config
 import ai.arcblroth.somnus3.commands.impl.registerAdminCommands
+import ai.arcblroth.somnus3.commands.impl.registerCounterCommands
 import ai.arcblroth.somnus3.commands.impl.registerGameCommands
 import dev.kord.core.Kord
 import dev.kord.core.entity.Message
@@ -17,6 +18,7 @@ suspend fun registerCommandCallbacks(kord: Kord, config: Config): Commands {
     val registry = CommandRegistry.registerCommands(kord, config) {
         registerGameCommands(kord, config)
         registerAdminCommands(kord, config)
+        registerCounterCommands(kord, config)
     }
     return Commands(registry)
 }

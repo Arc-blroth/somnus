@@ -37,6 +37,8 @@ class CommandRegistry private constructor(private val kord: Kord, private val co
         val builderObj = SlashCommandBuilder().also(builder)
         val desc = requireNotNull(builderObj.description) { "Slash command must have a description!" }
         val exec = requireNotNull(builderObj.execute) { "Slash command must actually do something!" }
+        check(name.matches(INPUT_COMMAND_NAME_REGEX)) { "Main slash command name must match the validation regex!" }
+        check(name.length in 1..32) { "Name must be between 1 and 32 characters long!" }
         check(desc.length in 1..100) { "Description must be between 1 and 100 characters long!" }
         var numRequiredOptions = 0
         var foundOptionalArg = false
@@ -65,7 +67,7 @@ class CommandRegistry private constructor(private val kord: Kord, private val co
         slash(name, user, builder)
         val command = slashCommands[name]!!
         aliases.forEach {
-            slashCommands[it] = command.copy(name = it)
+            slashCommands[it] = command.copy(name = it, isAlias = true)
         }
     }
 
@@ -84,6 +86,11 @@ class CommandRegistry private constructor(private val kord: Kord, private val co
                 // register new commands
                 kord.createGuildApplicationCommands(server.id) {
                     for (command in slashCommands.values) {
+                        if (command.isAlias && !command.name.matches(INPUT_COMMAND_NAME_REGEX)) {
+                            // skip aliases that don't conform to the slash command name regex
+                            // this is used for the !++ and !-- counter commands
+                            continue
+                        }
                         input(command.name, command.description) {
                             options = command.options
                                 .map(Option<*>::toOptionsBuilder)
@@ -176,6 +183,8 @@ class CommandRegistry private constructor(private val kord: Kord, private val co
     }
 
     companion object {
+        private val INPUT_COMMAND_NAME_REGEX = Regex("^[-_\\p{L}\\p{N}\\p{sc=Deva}\\p{sc=Thai}]{1,32}\$")
+
         suspend fun registerCommands(kord: Kord, config: Config, builder: CommandRegistry.() -> Unit) =
             CommandRegistry(kord, config).also(builder).apply { finish() }
     }

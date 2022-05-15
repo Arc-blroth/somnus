@@ -24,4 +24,5 @@ internal data class SlashCommand(
     val options: List<Option<*>>,
     val numRequiredOptions: Int,
     val execute: SlashCommandAction,
+    val isAlias: Boolean = false,
 )
