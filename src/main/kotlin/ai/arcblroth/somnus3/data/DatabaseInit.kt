@@ -1,6 +1,7 @@
 package ai.arcblroth.somnus3.data
 
 import org.jetbrains.exposed.sql.Database
+import org.jetbrains.exposed.sql.DatabaseConfig
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.transactions.transaction
 import java.nio.file.Paths
@@ -13,7 +14,7 @@ fun initDatabase() {
         databaseFile.parentFile.mkdirs()
         databaseFile.createNewFile()
     }
-    Database.connect("jdbc:sqlite:$DB_FILE")
+    Database.connect("jdbc:sqlite:$DB_FILE", databaseConfig = DatabaseConfig { useNestedTransactions = true })
     transaction {
         SchemaUtils.create(PlayerDataTable, PreferencesDataTable, CounterDataTable)
     }

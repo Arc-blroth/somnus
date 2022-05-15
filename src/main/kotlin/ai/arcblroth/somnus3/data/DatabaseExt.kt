@@ -14,6 +14,9 @@ import org.jetbrains.exposed.sql.transactions.transaction
 fun withPlayerData(player: Snowflake, block: PlayerData.() -> Unit) =
     withData(PlayerData, PlayerDataTable, player, PlayerData::initPlayerData, block)
 
+fun withPreferencesData(player: Snowflake, block: PreferencesData.() -> Unit) =
+    withData(PreferencesData, PreferencesDataTable, player, { showDeathMessages = true }, block)
+
 /**
  * Opens a database transaction to `UPDATE` some data type.
  * If existing data doesn't exist in the database, new data will be inserted.
@@ -47,7 +50,7 @@ private inline fun <reified Key, reified Table, reified DataType, reified DataTy
 /**
  * Initial player data for new players.
  */
-private fun PlayerData.initPlayerData() {
+fun PlayerData.initPlayerData() {
     lastDailyRewardTime = Clock.System.now().toEpochMilliseconds()
     sleepPoints = 0
     moneyPoints = 100

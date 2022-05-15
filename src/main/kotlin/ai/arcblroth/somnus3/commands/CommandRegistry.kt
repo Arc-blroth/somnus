@@ -37,6 +37,7 @@ class CommandRegistry private constructor(private val kord: Kord, private val co
         val builderObj = SlashCommandBuilder().also(builder)
         val desc = requireNotNull(builderObj.description) { "Slash command must have a description!" }
         val exec = requireNotNull(builderObj.execute) { "Slash command must actually do something!" }
+        check(desc.length in 1..100) { "Description must be between 1 and 100 characters long!" }
         var numRequiredOptions = 0
         var foundOptionalArg = false
         for (option in builderObj.options) {
