@@ -1,24 +1,38 @@
 package ai.arcblroth.somnus3
 
 import ai.arcblroth.somnus3.commands.registerCommandCallbacks
+import ai.arcblroth.somnus3.mcserver.ServerInfoProvider
+import ai.arcblroth.somnus3.panel.InteractivePanel
+import ai.arcblroth.somnus3.panel.InteractivePanelBuilder
+import ai.arcblroth.somnus3.panel.InteractivePanelBuilderImpl
 import dev.kord.common.entity.ActivityType
+import dev.kord.common.entity.Snowflake
 import dev.kord.core.Kord
 import dev.kord.core.behavior.channel.createMessage
+import dev.kord.core.behavior.interaction.response.edit
 import dev.kord.core.entity.Message
 import dev.kord.core.entity.User
 import dev.kord.core.event.gateway.ReadyEvent
+import dev.kord.core.event.interaction.ButtonInteractionCreateEvent
 import dev.kord.core.event.message.MessageCreateEvent
 import dev.kord.core.on
 import dev.kord.gateway.Intent
 import dev.kord.gateway.PrivilegedIntent
 import dev.kord.gateway.builder.PresenceBuilder
+import dev.kord.rest.builder.message.create.MessageCreateBuilder
 import dev.kord.rest.builder.message.create.UserMessageCreateBuilder
+import dev.kord.rest.builder.message.create.actionRow
+import dev.kord.rest.builder.message.create.embed
+import io.github.reactivecircus.cache4k.Cache
 import java.io.BufferedReader
 import java.io.FileReader
 import java.io.IOException
 import java.nio.file.Paths
+import kotlin.time.Duration.Companion.minutes
 
-class Somnus(val config: Config) {
+class Somnus(private val config: Config, private val serverInfoProvider: ServerInfoProvider?) {
+    private val panels: Cache<Snowflake, InteractivePanel> = Cache.Builder().expireAfterWrite(5.minutes).build()
+
     suspend fun start() {
         start {
             when (config.statusType) {
@@ -55,7 +69,7 @@ class Somnus(val config: Config) {
     }
 
     private suspend fun registerCallbacks(kord: Kord) {
-        val commands = registerCommandCallbacks(kord, config)
+        val commands = registerCommandCallbacks(kord, this, config, serverInfoProvider)
 
         kord.on<MessageCreateEvent> {
             val author = message.author
@@ -66,6 +80,18 @@ class Somnus(val config: Config) {
 
                 if (command.startsWith(Constants.PREFIX)) {
                     commands.handleMessage(message, author, tokens[0].substring(1), tokens)
+                }
+            }
+        }
+
+        kord.on<ButtonInteractionCreateEvent> {
+            with(interaction.deferPublicMessageUpdate()) {
+                panels.get(interaction.message.id)?.let {
+                    when (interaction.component.customId) {
+                        "previous" -> it.previousPage()
+                        "next" -> it.nextPage()
+                    }
+                    edit { it.updatePage(this) }
                 }
             }
         }
@@ -102,6 +128,10 @@ class Somnus(val config: Config) {
         }
     }
 
+    fun registerInteractivePanel(id: Snowflake, panel: InteractivePanel) {
+        panels.put(id, panel)
+    }
+
     /**
      * Searches for a bot token in order from the following sources:
      * - the `TOKEN` env variable
@@ -136,8 +166,20 @@ suspend inline fun Message.respond(content: String) {
     }
 }
 
-suspend inline fun Message.respond(builder: UserMessageCreateBuilder.() -> Unit) {
-    if (this.author != null) {
+suspend inline fun Message.respond(builder: UserMessageCreateBuilder.() -> Unit): Message? {
+    return if (this.author != null) {
         this.channel.createMessage(builder)
+    } else {
+        null
     }
+}
+
+fun MessageCreateBuilder.respondPanel(builder: InteractivePanelBuilder.() -> Unit): InteractivePanel {
+    val panel = InteractivePanelBuilderImpl().apply(builder).build()
+    embed(panel.pages[0])
+    actionRow {
+        interactionButton(panel.style, "previous") { label = "\uD83E\uDC14" }
+        interactionButton(panel.style, "next") { label = "\uD83E\uDC16" }
+    }
+    return panel
 }

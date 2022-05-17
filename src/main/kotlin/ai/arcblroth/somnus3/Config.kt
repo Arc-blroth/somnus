@@ -22,10 +22,6 @@ data class Config(
     // ip address to use when pinging the minecraft server
     val mcServerIP: String? = null,
 
-    // calfire data is sorted by distance to these coordinates
-    val latitude: Double = 0.0,
-    val longitude: Double = 0.0,
-
     // the list of all servers that Somnus will function in
     val allowedServers: List<Snowflake> = listOf(),
 

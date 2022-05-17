@@ -1,6 +1,8 @@
 package ai.arcblroth.somnus3
 
 import dev.kord.common.Color
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.json.Json
 
 object Constants {
     // Colors
@@ -44,4 +46,13 @@ object Constants {
     const val WORSHIP_COST = 7
     const val SWAG_NAME = "Sr. Gomez"
     const val SWAG_IMG = "https://media.discordapp.net/attachments/756279756374409236/798971096996642816/image0.jpg"
+
+    // Data Handling
+    @OptIn(ExperimentalSerializationApi::class)
+    val lenientJson = Json {
+        explicitNulls = false
+        ignoreUnknownKeys = true
+        isLenient = true
+        coerceInputValues = true
+    }
 }

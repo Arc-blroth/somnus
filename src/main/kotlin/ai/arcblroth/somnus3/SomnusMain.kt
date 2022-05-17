@@ -3,6 +3,7 @@
 package ai.arcblroth.somnus3
 
 import ai.arcblroth.somnus3.data.initDatabase
+import ai.arcblroth.somnus3.mcserver.NetworkPingServerInfoProvider
 import kotlin.system.exitProcess
 
 /**
@@ -23,5 +24,5 @@ suspend fun main() {
         exitProcess(-1)
     }
 
-    Somnus(config).start()
+    Somnus(config, NetworkPingServerInfoProvider.fromConfig(config)).start()
 }

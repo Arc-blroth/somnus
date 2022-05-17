@@ -1,7 +1,11 @@
 package ai.arcblroth.somnus3.commands
 
 import ai.arcblroth.somnus3.Config
+import ai.arcblroth.somnus3.Somnus
+import ai.arcblroth.somnus3.panel.InteractivePanel
+import ai.arcblroth.somnus3.panel.InteractivePanelBuilder
 import ai.arcblroth.somnus3.respond
+import ai.arcblroth.somnus3.respondPanel
 import dev.kord.common.entity.ApplicationCommandType
 import dev.kord.common.entity.Snowflake
 import dev.kord.core.Kord
@@ -18,7 +22,7 @@ import kotlinx.coroutines.flow.toSet
 import org.slf4j.LoggerFactory
 
 @SomnusCommandsDsl
-class CommandRegistry private constructor(private val kord: Kord, private val config: Config) {
+class CommandRegistry private constructor(private val kord: Kord, private val somnus: Somnus, private val config: Config) {
     private val logger = LoggerFactory.getLogger("CommandRegistry")
     private var finished = false
     private val slashCommands: MutableMap<String, SlashCommand> = mutableMapOf()
@@ -137,12 +141,21 @@ class CommandRegistry private constructor(private val kord: Kord, private val co
                             }.orEmpty()
                         }
                     }
-                    interaction.respondPublic {
+
+                    var panel: InteractivePanel? = null
+                    val result = interaction.respondPublic {
                         object : SlashCommandExecutionBuilder {
                             override fun respond(builder: MessageCreateBuilder.() -> Unit) {
                                 this@respondPublic.builder()
                             }
+                            override fun respondPanel(builder: InteractivePanelBuilder.() -> Unit) {
+                                panel = this@respondPublic.respondPanel(builder)
+                            }
                         }.(slashCommand.execute)(interaction.user, interaction.getGuildOrNull(), options)
+                    }
+                    if (panel != null) {
+                        val message = kord.with(EntitySupplyStrategy.rest).getOriginalInteraction(result.applicationId, result.token)
+                        somnus.registerInteractivePanel(message.id, panel!!)
                     }
                 }
             }
@@ -172,12 +185,20 @@ class CommandRegistry private constructor(private val kord: Kord, private val co
                     return@handleMessage
                 }
             }
-            message.respond actual@{
+
+            var panel: InteractivePanel? = null
+            val result = message.respond actual@{
                 object : SlashCommandExecutionBuilder {
                     override fun respond(builder: MessageCreateBuilder.() -> Unit) {
                         this@actual.builder()
                     }
+                    override fun respondPanel(builder: InteractivePanelBuilder.() -> Unit) {
+                        panel = this@actual.respondPanel(builder)
+                    }
                 }.(slashCommand.execute)(author, message.getGuildOrNull(), options)
+            }
+            if (panel != null && result != null) {
+                somnus.registerInteractivePanel(result.id, panel!!)
             }
         }
     }
@@ -185,7 +206,7 @@ class CommandRegistry private constructor(private val kord: Kord, private val co
     companion object {
         private val INPUT_COMMAND_NAME_REGEX = Regex("^[-_\\p{L}\\p{N}\\p{sc=Deva}\\p{sc=Thai}]{1,32}\$")
 
-        suspend fun registerCommands(kord: Kord, config: Config, builder: CommandRegistry.() -> Unit) =
-            CommandRegistry(kord, config).also(builder).apply { finish() }
+        suspend fun registerCommands(kord: Kord, somnus: Somnus, config: Config, builder: CommandRegistry.() -> Unit) =
+            CommandRegistry(kord, somnus, config).also(builder).apply { finish() }
     }
 }

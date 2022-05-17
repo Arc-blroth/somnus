@@ -9,6 +9,7 @@ import ai.arcblroth.somnus3.data.PlayerData
 import ai.arcblroth.somnus3.data.initPlayerData
 import ai.arcblroth.somnus3.data.withPlayerData
 import ai.arcblroth.somnus3.data.withPreferencesData
+import ai.arcblroth.somnus3.panel.InteractivePanelBuilder
 import ai.arcblroth.somnus3.respond
 import dev.kord.common.entity.Snowflake
 import dev.kord.core.Kord
@@ -193,6 +194,7 @@ suspend fun update(msg: Message, author: User) {
         override fun respond(builder: MessageCreateBuilder.() -> Unit) {
             response = builder
         }
+        override fun respondPanel(builder: InteractivePanelBuilder.() -> Unit) = throw NotImplementedError()
     }
 
     with(context) {
