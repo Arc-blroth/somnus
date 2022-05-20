@@ -6,7 +6,6 @@ import ai.arcblroth.somnus3.panel.InteractivePanel
 import ai.arcblroth.somnus3.panel.InteractivePanelBuilder
 import ai.arcblroth.somnus3.respond
 import ai.arcblroth.somnus3.respondPanel
-import dev.kord.common.entity.ApplicationCommandType
 import dev.kord.common.entity.Snowflake
 import dev.kord.core.Kord
 import dev.kord.core.behavior.interaction.respondPublic
@@ -17,7 +16,6 @@ import dev.kord.core.event.interaction.GuildApplicationCommandInteractionCreateE
 import dev.kord.core.on
 import dev.kord.core.supplier.EntitySupplyStrategy
 import dev.kord.rest.builder.message.create.MessageCreateBuilder
-import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.flow.toSet
 import org.slf4j.LoggerFactory
 
@@ -27,6 +25,7 @@ class CommandRegistry private constructor(private val kord: Kord, private val so
     private var finished = false
     private val slashCommands: MutableMap<String, SlashCommand> = mutableMapOf()
     private val userCommands: MutableMap<String, SlashCommand> = mutableMapOf()
+    private val textOnlyCommands: MutableMap<String, SlashCommand> = mutableMapOf()
     private val registeredCommands: MutableMap<Snowflake, SlashCommand> = mutableMapOf()
 
     /**
@@ -44,17 +43,10 @@ class CommandRegistry private constructor(private val kord: Kord, private val so
         check(name.matches(INPUT_COMMAND_NAME_REGEX)) { "Main slash command name must match the validation regex!" }
         check(name.length in 1..32) { "Name must be between 1 and 32 characters long!" }
         check(desc.length in 1..100) { "Description must be between 1 and 100 characters long!" }
-        var numRequiredOptions = 0
-        var foundOptionalArg = false
-        for (option in builderObj.options) {
-            when (option.optional) {
-                true -> foundOptionalArg = true
-                false -> {
-                    check(!foundOptionalArg) { "All required options must be listed before optional options!" }
-                    numRequiredOptions++
-                }
-            }
+        if (builderObj.options.isNotEmpty() && builderObj.options.count { it is MessageContentOption } > 0) {
+            check(builderObj.options.size == 1) { "MessageContentOption must be the first and only option present!" }
         }
+        val numRequiredOptions = checkOptionalArguments(builderObj.options)
 
         val command = SlashCommand(name, desc, builderObj.options, numRequiredOptions, exec)
         slashCommands[name] = command
@@ -76,6 +68,37 @@ class CommandRegistry private constructor(private val kord: Kord, private val so
     }
 
     /**
+     * Registers a new text-only command with one or more aliases.
+     */
+    fun text(name: String, vararg aliases: String, builder: SlashCommandBuilder.() -> Unit) {
+        val builderObj = SlashCommandBuilder().also(builder)
+        val exec = requireNotNull(builderObj.execute) { "Slash command must actually do something!" }
+        val numRequiredOptions = checkOptionalArguments(builderObj.options)
+
+        val command = SlashCommand(name, "", builderObj.options, numRequiredOptions, exec)
+        textOnlyCommands[name] = command
+
+        aliases.forEach {
+            textOnlyCommands[it] = command.copy(name = it, isAlias = true)
+        }
+    }
+
+    private fun checkOptionalArguments(options: List<Option<*>>): Int {
+        var numRequiredOptions = 0
+        var foundOptionalArg = false
+        for (option in options) {
+            when (option.optional) {
+                true -> foundOptionalArg = true
+                false -> {
+                    check(!foundOptionalArg) { "All required options must be listed before optional options!" }
+                    numRequiredOptions++
+                }
+            }
+        }
+        return numRequiredOptions
+    }
+
+    /**
      * Actually invokes the Discord API to finish command registration.
      */
     private suspend fun finish() {
@@ -85,8 +108,6 @@ class CommandRegistry private constructor(private val kord: Kord, private val so
         val servers = EntitySupplyStrategy.rest.supply(kord).guilds.toSet().filter { it.id in config.allowedServers }
         for (server in servers) {
             try {
-                val currentCommands = kord.getGuildApplicationCommands(server.id).toList()
-
                 // register new commands
                 kord.createGuildApplicationCommands(server.id) {
                     for (command in slashCommands.values) {
@@ -106,19 +127,6 @@ class CommandRegistry private constructor(private val kord: Kord, private val so
                     }
                 }.collect {
                     registeredCommands[it.id] = slashCommands[it.name]!!
-                }
-
-                // delete any old commands
-                for (oldCommand in currentCommands) {
-                    when (oldCommand.type) {
-                        ApplicationCommandType.ChatInput -> if (oldCommand.name !in slashCommands) {
-                            oldCommand.delete()
-                        }
-                        ApplicationCommandType.User -> if (oldCommand.name !in userCommands) {
-                            oldCommand.delete()
-                        }
-                        else -> {}
-                    }
                 }
             } catch (e: Exception) {
                 logger.warn("Couldn't register commands for server `${server.name}` (${server.id})")
@@ -165,11 +173,14 @@ class CommandRegistry private constructor(private val kord: Kord, private val so
     // invoked from `Somnus` so that we don't tokenize twice
     // assumes that the message has been sent from an allowed server
     internal suspend fun handleMessage(message: Message, author: User, commandPrefix: String, tokens: List<String>) {
-        val slashCommand = slashCommands[commandPrefix] ?: return
+        val slashCommand = slashCommands[commandPrefix] ?: textOnlyCommands[commandPrefix] ?: return
         if (tokens.size - 1 >= slashCommand.numRequiredOptions) {
             val options = slashCommand.options.withIndex().associate {
                 if (it.index + 1 >= tokens.size) {
                     return@associate it.value.name to null
+                }
+                if (it.value is MessageContentOption) {
+                    return@associate it.value.name to message.content.trim().substring(commandPrefix.length + 1)
                 }
                 val token = tokens[it.index + 1]
                 val maybeParsed = it.value.parse(token)
@@ -188,7 +199,10 @@ class CommandRegistry private constructor(private val kord: Kord, private val so
 
             var panel: InteractivePanel? = null
             val result = message.respond actual@{
-                object : SlashCommandExecutionBuilder {
+                object : TextBasedSlashCommandExecutionBuilder {
+                    override val message: Message
+                        get() = message
+
                     override fun respond(builder: MessageCreateBuilder.() -> Unit) {
                         this@actual.builder()
                     }

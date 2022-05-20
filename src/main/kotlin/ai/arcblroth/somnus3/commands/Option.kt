@@ -35,6 +35,16 @@ class StringOption(
     override fun parse(token: String) = if (choices != null && !choices.containsValue(token)) null else token
 }
 
+class MessageContentOption(
+    name: String,
+    description: String,
+    optional: Boolean = false,
+) : Option<String>(name, description, optional, onParseFailure = {}) {
+    override fun toOptionsBuilderInner() = StringChoiceBuilder(name, description)
+
+    override fun parse(token: String) = throw NotImplementedError("Handled as a special case in CommandRegistry")
+}
+
 class LongOption(
     name: String,
     description: String,
