@@ -64,4 +64,6 @@ fun PlayerData.initPlayerData() {
     hitPoints = 20
     swagPoints = 0
     gamePoints = 0
+    furryPoints = 0.0
+    bedType = BedType.FLOOR
 }

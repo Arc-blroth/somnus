@@ -81,6 +81,8 @@ fun MessageCreateBuilder.deathMessage(author: User, data: PlayerData, bean: Bool
                 :money_with_wings: ${data.moneyPoints}
                 :video_game: ${data.gamePoints}
                 :sunglasses: ${data.swagPoints}
+                :chipmunk: ${data.furryPoints.toInt()}
+                :bed: ${data.bedType.uiName}
             """.trimIndent()
         }
     }

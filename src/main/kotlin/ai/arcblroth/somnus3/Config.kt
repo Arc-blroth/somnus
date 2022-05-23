@@ -48,6 +48,7 @@ data class Config(
     data class WorshipConfig(
         val name: String,
         val url: String,
+        val furry: Boolean = false,
     )
 
     init {

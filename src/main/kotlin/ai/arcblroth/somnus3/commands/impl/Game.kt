@@ -5,10 +5,7 @@ import ai.arcblroth.somnus3.Constants
 import ai.arcblroth.somnus3.commands.CommandRegistry
 import ai.arcblroth.somnus3.commands.SlashCommandExecutionBuilder
 import ai.arcblroth.somnus3.commands.UserOption
-import ai.arcblroth.somnus3.data.PlayerData
-import ai.arcblroth.somnus3.data.initPlayerData
-import ai.arcblroth.somnus3.data.withPlayerData
-import ai.arcblroth.somnus3.data.withPreferencesData
+import ai.arcblroth.somnus3.data.*
 import ai.arcblroth.somnus3.panel.InteractivePanelBuilder
 import ai.arcblroth.somnus3.respond
 import dev.kord.common.entity.Snowflake
@@ -18,7 +15,6 @@ import dev.kord.core.entity.User
 import dev.kord.rest.builder.message.create.MessageCreateBuilder
 import kotlin.math.abs
 import kotlin.math.floor
-import kotlin.math.roundToInt
 
 fun CommandRegistry.registerGameCommands(kord: Kord, config: Config) {
     slash("stats") {
@@ -44,7 +40,9 @@ fun CommandRegistry.registerGameCommands(kord: Kord, config: Config) {
                             field("Money", true) { ":money_with_wings: \$$moneyPoints" }
                             field("HP", true) { ":heart: $hitPoints" }
                             field("Gaming Sessions", false) { ":video_game: $gamePoints" }
-                            field("Swag Power", false) { ":sunglasses: $swagPoints" }
+                            field("Swag Power", true) { ":sunglasses: $swagPoints" }
+                            field("Furryness", true) { ":chipmunk: ${furryPoints.toInt()}" }
+                            field("Current Bed", false) { ":bed: ${bedType.uiName}" }
                         }
                     }
                 }
@@ -59,7 +57,8 @@ fun CommandRegistry.registerGameCommands(kord: Kord, config: Config) {
                 val random = Math.random()
                 val coalFound = floor(random * Constants.DIG_REWARD_MULT + 1).toInt()
                 val knowledgeBonus = knowledgePoints * Constants.DIG_LEARN_MULTI
-                val actualCoalFound = floor(random * (Constants.DIG_REWARD_MULT + knowledgeBonus) + 1).toInt()
+                val furryBonus = floor(furryPoints)
+                val actualCoalFound = applyPowerEffects(random * (Constants.DIG_REWARD_MULT + knowledgeBonus + furryBonus) + 1)
                 sleepPoints -= Constants.DIG_COST
                 moneyPoints += actualCoalFound
 
@@ -83,7 +82,7 @@ fun CommandRegistry.registerGameCommands(kord: Kord, config: Config) {
                     }
                 } else {
                     val random = Math.random()
-                    val hpGained = floor(random * (Constants.RAMEN_REWARD_MAX - 1) + 1).toInt()
+                    val hpGained = applyPowerEffects(random * (Constants.RAMEN_REWARD_MAX - 1) + 1)
                     hitPoints += hpGained
                     moneyPoints -= Constants.RAMEN_COST
 
@@ -108,7 +107,10 @@ fun CommandRegistry.registerGameCommands(kord: Kord, config: Config) {
                     }
                 } else {
                     val random = Math.random()
-                    val hpGained = (random * (Constants.MSG_REWARD_MAX - Constants.MSG_REWARD_MIN) + Constants.MSG_REWARD_MIN).roundToInt()
+                    val hpGained = applyPowerEffects(
+                        random * (Constants.MSG_REWARD_MAX - Constants.MSG_REWARD_MIN) + Constants.MSG_REWARD_MIN,
+                        round = true
+                    )
                     hitPoints += hpGained
                     moneyPoints -= Constants.MSG_COST
 
@@ -128,7 +130,8 @@ fun CommandRegistry.registerGameCommands(kord: Kord, config: Config) {
         execute = { author, _, _ ->
             withPlayerData(author.id) {
                 val random = Math.random()
-                val kpGained = floor(random * (Constants.LEARN_REWARD_MAX - 1) + 1).toInt()
+                val maxKp = Constants.LEARN_REWARD_MAX + if (bedType == BedType.COTTON) { 3 } else { 0 }
+                val kpGained = applyPowerEffects(random * (maxKp - 1) + 1)
                 knowledgePoints += kpGained
                 sleepPoints -= Constants.LEARN_COST
 
@@ -147,11 +150,12 @@ fun CommandRegistry.registerGameCommands(kord: Kord, config: Config) {
         execute = { author, _, _ ->
             withPlayerData(author.id) {
                 val random = Math.random()
-                val hpGained = floor(random * Constants.GAME_REWARD + 1).toInt()
+                val baseReward = Constants.GAME_REWARD + if (bedType == BedType.POLY) { 2 } else { 0 }
+                val hpGained = applyPowerEffects(random * baseReward + 1)
                 val knowledgeLost = floor(random * Constants.GAME_COST + 1).toInt()
                 knowledgePoints -= knowledgeLost
                 hitPoints += hpGained
-                gamePoints += 1
+                gamePoints += if (bedType == BedType.POLY) { 2 } else { 1 }
 
                 respond {
                     somnusEmbed {
@@ -169,15 +173,23 @@ fun CommandRegistry.registerGameCommands(kord: Kord, config: Config) {
         execute = { author, guild, _ ->
             withPlayerData(author.id) {
                 val random = Math.random()
-                val swagGained = floor(random * (Constants.GAME_REWARD + gamePoints) + 1).toInt()
+                val baseReward = Constants.GAME_REWARD + if (bedType == BedType.SILK) { 4 } else { 0 }
+                val swagGained = applyPowerEffects(random * (baseReward + gamePoints) + 1)
                 val sleepLost = floor(random * Constants.WORSHIP_COST + 1).toInt()
                 swagPoints += swagGained
                 sleepPoints -= sleepLost
 
+                val worshipConfig = guild?.let { config.worshipConfig[guild.id] }
+                    ?: Config.WorshipConfig(Constants.SWAG_NAME, Constants.SWAG_IMG)
+
+                if (worshipConfig.furry) {
+                    if (Math.random() < 0.5) {
+                        furryPoints += 1.0
+                    }
+                }
+
                 respond {
                     somnusEmbed {
-                        val worshipConfig = guild?.let { config.worshipConfig[guild.id] }
-                            ?: Config.WorshipConfig(Constants.SWAG_NAME, Constants.SWAG_IMG)
                         thumbnail { url = worshipConfig.url }
                         title = "${author.username} worshipped ${worshipConfig.name}"
                         description = "and gained $swagGained swag points at the cost of $sleepLost sleep points."
@@ -203,7 +215,7 @@ suspend fun update(msg: Message, author: User) {
             val daysSince = floor((now - lastDailyRewardTime) / 86400000.0).toInt()
             if (daysSince > 0) {
                 // Update sleep points
-                sleepPoints += daysSince * Constants.SLEEP_POINTS_PER_DAY
+                sleepPoints += daysSince * (Constants.SLEEP_POINTS_PER_DAY + bedType.ordinal * Constants.SLEEP_POINTS_PER_BED_TIER)
                 lastDailyRewardTime += daysSince * 86400000L
 
                 // 1 hp of damage is taken a day.
@@ -212,6 +224,11 @@ suspend fun update(msg: Message, author: User) {
                 // If missing sleep you take another 2 points of damage.
                 if (sleepPoints < 0) {
                     hitPoints -= daysSince * Constants.DAMAGE_PER_DAY * abs(sleepPoints / 2)
+                }
+
+                // Bed effects
+                if (bedType == BedType.STRAW) {
+                    furryPoints += 0.2
                 }
 
                 // Did the player just die?

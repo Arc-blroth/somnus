@@ -14,6 +14,8 @@ object PlayerDataTable : PlayerSnowflakeIdTable() {
     val hitPoints = integer("hitPoints")
     val swagPoints = integer("swagPoints")
     val gamePoints = integer("gamePoints")
+    val furryPoints = double("furryPoints")
+    val bedType = enumeration("bedType", BedType::class)
 }
 
 object PreferencesDataTable : PlayerSnowflakeIdTable() {

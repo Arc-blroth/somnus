@@ -25,6 +25,7 @@ object Constants {
 
     // Game Settings
     const val SLEEP_POINTS_PER_DAY = 8
+    const val SLEEP_POINTS_PER_BED_TIER = 4
     const val DAMAGE_PER_DAY = 1
 
     const val DIG_COST = 1

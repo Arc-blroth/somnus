@@ -15,6 +15,8 @@ class PlayerData(id: EntityID<Snowflake>) : SnowflakeEntity(id) {
     var hitPoints by PlayerDataTable.hitPoints
     var swagPoints by PlayerDataTable.swagPoints
     var gamePoints by PlayerDataTable.gamePoints
+    var furryPoints by PlayerDataTable.furryPoints
+    var bedType by PlayerDataTable.bedType
 }
 
 class PreferencesData(id: EntityID<Snowflake>) : SnowflakeEntity(id) {

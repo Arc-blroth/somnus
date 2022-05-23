@@ -23,6 +23,7 @@ suspend fun registerCommandCallbacks(
     val registry = CommandRegistry.registerCommands(kord, somnus, config) {
         registerMetaCommands(kord, config)
         registerGameCommands(kord, config)
+        registerGameV3Commands(kord, config)
         registerAdminCommands(kord, config)
         registerCounterCommands(kord, config)
         registerIRLCommands(kord, config, serverInfoProvider)
