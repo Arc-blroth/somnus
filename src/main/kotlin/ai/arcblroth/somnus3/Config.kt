@@ -13,6 +13,9 @@ import java.nio.file.Paths
 
 const val CONFIG_FILE = ".data/config.json"
 
+// a map of guild -> log channel
+typealias ActivityDetectorConfig = Map<Snowflake, Snowflake>
+
 @Serializable
 data class Config(
     // bot status
@@ -36,9 +39,10 @@ data class Config(
 
     // activity detector options
     val enableActivityDetectors: Boolean = false,
-    val leagueChannelId: Snowflake? = null,
-    val gamingChannelId: Snowflake? = null,
+    val leagueDetectorConfig: ActivityDetectorConfig? = null,
     val leagueAppIds: List<Snowflake> = listOf(Snowflake(356869127241072640L), Snowflake(401518684763586560L)),
+    val intellijDetectorConfig: ActivityDetectorConfig? = null,
+    val intellijAppIds: List<Snowflake> = listOf(Snowflake(547842383207858178L)),
 ) {
     @Serializable
     data class WorshipConfig(
@@ -48,8 +52,7 @@ data class Config(
 
     init {
         if (enableActivityDetectors) {
-            requireNotNull(leagueChannelId) { "A valid League channel must be specified for activity detectors to work!" }
-            requireNotNull(gamingChannelId) { "A valid gaming channel must be specified for activity detectors to work!" }
+            requireNotNull(leagueDetectorConfig) { "A valid config must be specified for the League detector to work!" }
         }
     }
 }

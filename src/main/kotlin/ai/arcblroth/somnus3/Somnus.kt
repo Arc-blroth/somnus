@@ -1,5 +1,6 @@
 package ai.arcblroth.somnus3
 
+import ai.arcblroth.somnus3.activity.ActivityDetector
 import ai.arcblroth.somnus3.commands.registerCommandCallbacks
 import ai.arcblroth.somnus3.mcserver.ServerInfoProvider
 import ai.arcblroth.somnus3.panel.InteractivePanel
@@ -12,9 +13,11 @@ import dev.kord.core.behavior.channel.createMessage
 import dev.kord.core.behavior.interaction.response.edit
 import dev.kord.core.entity.Message
 import dev.kord.core.entity.User
+import dev.kord.core.entity.channel.TextChannel
 import dev.kord.core.event.gateway.ReadyEvent
 import dev.kord.core.event.interaction.ButtonInteractionCreateEvent
 import dev.kord.core.event.message.MessageCreateEvent
+import dev.kord.core.event.user.PresenceUpdateEvent
 import dev.kord.core.on
 import dev.kord.gateway.Intent
 import dev.kord.gateway.PrivilegedIntent
@@ -93,6 +96,28 @@ class Somnus(private val config: Config, private val serverInfoProvider: ServerI
                     }
                     edit { it.updatePage(this) }
                 }
+            }
+        }
+
+        if (config.enableActivityDetectors) {
+            suspend fun bakeActivityDetectorConfig(activityDetectorConfig: ActivityDetectorConfig) =
+                activityDetectorConfig.mapValues { kord.getChannel(it.value) as? TextChannel? }
+                    .filterValues { it != null }
+                    .mapValues { it.value!! }
+
+            val leagueConfig = bakeActivityDetectorConfig(config.leagueDetectorConfig!!)
+            val leagueDetector = ActivityDetector(leagueConfig, "@%s is playing **LEAGUE OF LEGENDS**") {
+                it.applicationId in config.leagueAppIds && it.name.equals("league of legends", ignoreCase = true)
+            }
+
+            val intellijConfig = bakeActivityDetectorConfig(config.intellijDetectorConfig!!)
+            val intellijDetector = ActivityDetector(intellijConfig, "@%s is writing bugs again") {
+                it.applicationId in config.intellijAppIds
+            }
+
+            kord.on<PresenceUpdateEvent> {
+                leagueDetector.update(this)
+                intellijDetector.update(this)
             }
         }
     }
