@@ -107,7 +107,9 @@ class Somnus(private val config: Config, private val serverInfoProvider: ServerI
 
             val leagueConfig = bakeActivityDetectorConfig(config.leagueDetectorConfig!!)
             val leagueDetector = ActivityDetector(leagueConfig, "@%s is playing **LEAGUE OF LEGENDS**") {
-                it.applicationId in config.leagueAppIds && it.name.equals("league of legends", ignoreCase = true)
+                it.applicationId in config.leagueAppIds &&
+                    it.name.equals("league of legends", ignoreCase = true) &&
+                    it.state.equals("in game", ignoreCase = true)
             }
 
             val intellijConfig = bakeActivityDetectorConfig(config.intellijDetectorConfig!!)
