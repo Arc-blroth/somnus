@@ -1,5 +1,6 @@
 package ai.arcblroth.somnus3.commands.impl
 
+import ai.arcblroth.somnus3.Constants
 import ai.arcblroth.somnus3.commands.SlashCommandExecutionBuilder
 import ai.arcblroth.somnus3.commands.TextBasedSlashCommandExecutionBuilder
 import ai.arcblroth.somnus3.data.BedType
@@ -31,7 +32,7 @@ suspend inline fun SlashCommandExecutionBuilder.withOptionalUserArg(
 
 fun SlashCommandExecutionBuilder.isTextCommand() = this is TextBasedSlashCommandExecutionBuilder
 
-fun SlashCommandExecutionBuilder.prefix() = if (isTextCommand()) { "!" } else { "/" }
+val SlashCommandExecutionBuilder.prefix get() = if (isTextCommand()) Constants.PREFIX else "/"
 
 fun PlayerData.applyPowerEffects(modifier: Double, round: Boolean = false) = when (bedType) {
     BedType.GOLD -> ceil(modifier * 1.25).toInt()

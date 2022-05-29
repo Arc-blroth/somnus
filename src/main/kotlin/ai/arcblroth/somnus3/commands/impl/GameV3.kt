@@ -33,7 +33,7 @@ fun CommandRegistry.registerGameV3Commands(kord: Kord, config: Config) {
                     respond {
                         somnusEmbed {
                             title = "Mystical Beds & Co. Catalogue"
-                            description = "Use `${prefix()}bed <name>` to purchase one of our lovely beds."
+                            description = "Use `${prefix}bed <name>` to purchase one of our lovely beds."
                             BedType.values().forEach {
                                 field {
                                     name = "${if (bedType == it) { ":star:" } else { "$${it.cost}" }} - ${it.uiName}"

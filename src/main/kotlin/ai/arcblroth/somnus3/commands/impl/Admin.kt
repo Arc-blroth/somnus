@@ -74,7 +74,7 @@ fun CommandRegistry.registerAdminCommands(kord: Kord, config: Config) {
                 respond {
                     somnusEmbed {
                         color = Constants.ERROR_COLOR
-                        title = "!randomban can only be used in a guild."
+                        title = "${prefix}randomban can only be used in a guild."
                     }
                 }
                 return@execute
@@ -94,7 +94,7 @@ fun CommandRegistry.registerAdminCommands(kord: Kord, config: Config) {
                     somnusEmbed {
                         color = Constants.ERROR_COLOR
                         title = "Couldn't randomly ban someone"
-                        description = "Somnus requires the `Ban Members` permission to execute a !randomban."
+                        description = "Somnus requires the `Ban Members` permission to execute a ${prefix}randomban."
                     }
                 }
                 return@execute
@@ -119,7 +119,7 @@ fun CommandRegistry.registerAdminCommands(kord: Kord, config: Config) {
                     somnusEmbed {
                         color = Constants.ERROR_COLOR
                         title = if (e.status.code == 403) {
-                            "Somnus requires the `GUILD_MEMBERS` privileged intent to execute a !randomban."
+                            "Somnus requires the `GUILD_MEMBERS` privileged intent to execute a ${prefix}randomban."
                         } else {
                             "Couldn't fetch guild member list"
                         }
