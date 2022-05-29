@@ -40,7 +40,6 @@ fun CommandRegistry.registerMetaCommands(kord: Kord, config: Config) {
                 name = "value",
                 description = "Show death messages?",
                 optional = true,
-                onParseFailure = { content = "Toggle value should either be `true` or `false`." }
             )
         )
         execute = { author, _, options ->

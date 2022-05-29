@@ -87,7 +87,7 @@ class BooleanOption(
     name: String,
     description: String,
     optional: Boolean = false,
-    onParseFailure: ParseFailureCallback?,
+    onParseFailure: ParseFailureCallback? = { content = "Toggle value should either be `true` or `false`." },
 ) : Option<Boolean>(name, description, optional, onParseFailure) {
     override fun toOptionsBuilderInner() = BooleanBuilder(name, description)
 

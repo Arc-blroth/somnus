@@ -69,7 +69,14 @@ fun CommandRegistry.registerAdminCommands(kord: Kord, config: Config) {
 
     slash("randomban") {
         description = "Randomly bans someone from this server."
-        execute = execute@{ author, guild, _ ->
+        options = listOf(
+            BooleanOption(
+                name = "bots",
+                description = "Should Somnus also ban bots? (false by default)",
+                optional = true,
+            )
+        )
+        execute = execute@{ author, guild, options ->
             if (guild == null) {
                 respond {
                     somnusEmbed {
@@ -100,6 +107,7 @@ fun CommandRegistry.registerAdminCommands(kord: Kord, config: Config) {
                 return@execute
             }
 
+            val banBots = options["bots"] as Boolean? ?: false
             val reservoir = LiLSampling<Member>(1)
             var realMemberCount = 0
             try {
@@ -107,7 +115,7 @@ fun CommandRegistry.registerAdminCommands(kord: Kord, config: Config) {
                 // is NOT cached, since we'll immediately remove a member from it below.
                 // Note that this requires the GUILD_MEMBERS privileged intent!
                 EntitySupplyStrategy.rest.supply(kord).getGuildMembers(guild.id)
-                    .filter { it.id != self.id }
+                    .filter { it.id != self.id && if (banBots) true else !it.isBot }
                     .collect {
                         reservoir.feed(it)
                         if (!it.isBot) {
