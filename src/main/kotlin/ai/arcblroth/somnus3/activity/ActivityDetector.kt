@@ -61,10 +61,12 @@ class ActivityDetector(
     }
 
     fun invalidate(event: MessageCreateEvent) {
-        val logChannel = config[event.guildId]
-        if (logChannel != null && event.message.channelId == logChannel.id) {
-            val guildCache = cache[event.guildId]!!
-            guildCache.values.forEach { it.invalid = true }
+        if (event.message.author?.id != event.kord.selfId) {
+            val logChannel = config[event.guildId]
+            if (logChannel != null && event.message.channelId == logChannel.id) {
+                val guildCache = cache[event.guildId]!!
+                guildCache.values.forEach { it.invalid = true }
+            }
         }
     }
 }
