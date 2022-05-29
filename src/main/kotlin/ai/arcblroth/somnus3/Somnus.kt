@@ -34,6 +34,7 @@ import java.nio.file.Paths
 import kotlin.time.Duration.Companion.minutes
 
 class Somnus(private val config: Config, private val serverInfoProvider: ServerInfoProvider?) {
+    private val activityDetectors: MutableList<ActivityDetector> = mutableListOf()
     private val panels: Cache<Snowflake, InteractivePanel> = Cache.Builder().expireAfterWrite(5.minutes).build()
 
     suspend fun start() {
@@ -75,6 +76,8 @@ class Somnus(private val config: Config, private val serverInfoProvider: ServerI
         val commands = registerCommandCallbacks(kord, this, config, serverInfoProvider)
 
         kord.on<MessageCreateEvent> {
+            activityDetectors.forEach { it.invalidate(this) }
+
             val author = message.author
             if (author != null && allowOnServer(message)) {
                 val command = message.content.trim()
@@ -117,9 +120,11 @@ class Somnus(private val config: Config, private val serverInfoProvider: ServerI
                 it.applicationId in config.intellijAppIds
             }
 
+            activityDetectors.add(leagueDetector)
+            activityDetectors.add(intellijDetector)
+
             kord.on<PresenceUpdateEvent> {
-                leagueDetector.update(this)
-                intellijDetector.update(this)
+                activityDetectors.forEach { it.update(this) }
             }
         }
     }
