@@ -7,6 +7,7 @@ kord = "0.8.0-M13"
 sqlite-jdbc = "3.36.0.3"
 exposed = "0.38.2"
 cache4k = "0.5.0"
+reservoir-sampling = "0.18"
 
 [plugins]
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
@@ -22,3 +23,4 @@ exposed-core = { module = "org.jetbrains.exposed:exposed-core", version.ref = "e
 exposed-dao = { module = "org.jetbrains.exposed:exposed-dao", version.ref = "exposed" }
 exposed-jdbc = { module = "org.jetbrains.exposed:exposed-jdbc", version.ref = "exposed" }
 cache4k = { module = "io.github.reactivecircus.cache4k:cache4k", version.ref = "cache4k" }
+reservoir-sampling = { module = "gr.james:random-sampling", version.ref = "reservoir-sampling" }

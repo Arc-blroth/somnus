@@ -7,9 +7,15 @@ import ai.arcblroth.somnus3.data.withPlayerData
 import dev.kord.common.entity.Permission
 import dev.kord.common.entity.Snowflake
 import dev.kord.core.Kord
+import dev.kord.core.behavior.ban
 import dev.kord.core.behavior.channel.edit
+import dev.kord.core.entity.Member
 import dev.kord.core.entity.ReactionEmoji
 import dev.kord.core.entity.channel.*
+import dev.kord.core.supplier.EntitySupplyStrategy
+import dev.kord.rest.request.RestRequestException
+import gr.james.sampling.LiLSampling
+import kotlinx.coroutines.flow.filter
 import java.io.StringReader
 import java.util.*
 
@@ -55,6 +61,108 @@ fun CommandRegistry.registerAdminCommands(kord: Kord, config: Config) {
                 withPlayerData(victim.id) {
                     respond {
                         deathMessage(victim, this@withPlayerData, true)
+                    }
+                }
+            }
+        }
+    }
+
+    slash("randomban") {
+        description = "Randomly bans someone from this server."
+        execute = execute@{ author, guild, _ ->
+            if (guild == null) {
+                respond {
+                    somnusEmbed {
+                        color = Constants.ERROR_COLOR
+                        title = "!randomban can only be used in a guild."
+                    }
+                }
+                return@execute
+            }
+
+            val executor = guild.getMember(author.id)
+            val self = guild.getMember(kord.selfId)
+
+            if (Permission.BanMembers !in executor.getPermissions()) {
+                respond {
+                    sudoFailMessage(executor)
+                }
+                return@execute
+            }
+            if (Permission.BanMembers !in self.getPermissions()) {
+                respond {
+                    somnusEmbed {
+                        color = Constants.ERROR_COLOR
+                        title = "Couldn't randomly ban someone"
+                        description = "Somnus requires the `Ban Members` permission to execute a !randomban."
+                    }
+                }
+                return@execute
+            }
+
+            val reservoir = LiLSampling<Member>(1)
+            var realMemberCount = 0
+            try {
+                // We use the REST entity supply strategy to ensure that the member list
+                // is NOT cached, since we'll immediately remove a member from it below.
+                // Note that this requires the GUILD_MEMBERS privileged intent!
+                EntitySupplyStrategy.rest.supply(kord).getGuildMembers(guild.id)
+                    .filter { it.id != self.id }
+                    .collect {
+                        reservoir.feed(it)
+                        if (!it.isBot) {
+                            realMemberCount++
+                        }
+                    }
+            } catch (e: RestRequestException) {
+                respond {
+                    somnusEmbed {
+                        color = Constants.ERROR_COLOR
+                        title = if (e.status.code == 403) {
+                            "Somnus requires the `GUILD_MEMBERS` privileged intent to execute a !randomban."
+                        } else {
+                            "Couldn't fetch guild member list"
+                        }
+                    }
+                }
+                return@execute
+            }
+            val victim = reservoir.sample().firstOrNull()
+
+            if (victim == null) {
+                respond {
+                    somnusEmbed {
+                        color = Constants.ERROR_COLOR
+                        title = "Nobody is in this server"
+                        description = "except for Somnus :("
+                    }
+                }
+            } else if (!victim.isBot && realMemberCount == 1) {
+                respond {
+                    somnusEmbed {
+                        color = Constants.ERROR_COLOR
+                        title = "Refusing to ban the last human member!"
+                    }
+                }
+            } else {
+                try {
+                    guild.ban(victim.id) {
+                        reason = "!randomban by ${author.username} (${author.id})"
+                        deleteMessagesDays = 0
+                    }
+                    respond {
+                        somnusEmbed {
+                            color = Constants.GOOD_COLOR
+                            title = "${victim.username} (`${victim.id}`) has been banned!"
+                        }
+                    }
+                } catch (e: RestRequestException) {
+                    respond {
+                        somnusEmbed {
+                            title = "${victim.username} (`${victim.id}`) has been chosen for the ban hammer!"
+                            description = "(Somnus doesn't have the permissions to ban this person" +
+                                " - <@${guild.ownerId}> will need to swing the hammer themselves.)"
+                        }
                     }
                 }
             }
