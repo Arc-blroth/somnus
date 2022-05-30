@@ -14,6 +14,7 @@ import dev.kord.core.behavior.channel.MessageChannelBehavior
 import dev.kord.core.behavior.channel.createMessage
 import dev.kord.core.entity.User
 import dev.kord.rest.builder.message.create.MessageCreateBuilder
+import dev.kord.rest.builder.message.create.UserMessageCreateBuilder
 import kotlin.math.abs
 import kotlin.math.floor
 
@@ -217,10 +218,12 @@ fun CommandRegistry.registerGameCommands(kord: Kord, config: Config) {
 }
 
 suspend fun update(channel: MessageChannelBehavior, author: User) {
-    var response: (MessageCreateBuilder.() -> Unit)? = null
+    val response = UserMessageCreateBuilder()
+    var hasResponse = false
     val context = object : SlashCommandExecutionBuilder {
         override fun respond(builder: MessageCreateBuilder.() -> Unit) {
-            response = builder
+            hasResponse = true
+            response.apply(builder)
         }
         override fun respondPanel(builder: InteractivePanelBuilder.() -> Unit) = throw NotImplementedError()
     }
@@ -259,8 +262,8 @@ suspend fun update(channel: MessageChannelBehavior, author: User) {
         }
     }
 
-    if (response != null) {
-        channel.createMessage(response!!)
+    if (hasResponse) {
+        channel.kord.rest.channel.createMessage(channel.id, response.toRequest())
     }
 }
 
