@@ -13,7 +13,6 @@ import dev.kord.core.entity.Message
 import dev.kord.core.entity.User
 import dev.kord.core.entity.interaction.GuildUserCommandInteraction
 import dev.kord.core.event.interaction.GuildApplicationCommandInteractionCreateEvent
-import dev.kord.core.on
 import dev.kord.core.supplier.EntitySupplyStrategy
 import dev.kord.rest.builder.message.create.MessageCreateBuilder
 import kotlinx.coroutines.flow.toSet
@@ -132,39 +131,38 @@ class CommandRegistry private constructor(private val kord: Kord, private val so
                 logger.warn("Couldn't register commands for server `${server.name}` (${server.id})")
             }
         }
+    }
 
-        // register application command callback
-        // note that the prefix command callback is implemented in `Somnus`
-        kord.on<GuildApplicationCommandInteractionCreateEvent> {
-            if (interaction.data.guildId.value in config.allowedServers) {
-                val slashCommand = registeredCommands[interaction.invokedCommandId]
-                if (slashCommand != null) {
-                    val options = when (interaction) {
-                        is GuildUserCommandInteraction -> {
-                            mapOf(slashCommand.options[0].name to (interaction as GuildUserCommandInteraction).targetId)
-                        }
-                        else -> {
-                            interaction.data.data.options.value?.associate {
-                                it.name to it.value.value?.value
-                            }.orEmpty()
-                        }
+    // application command callback, invoked from `Somnus`
+    internal suspend fun handleSlashCommand(event: GuildApplicationCommandInteractionCreateEvent) = with(event) {
+        if (interaction.data.guildId.value in config.allowedServers) {
+            val slashCommand = registeredCommands[interaction.invokedCommandId]
+            if (slashCommand != null) {
+                val options = when (interaction) {
+                    is GuildUserCommandInteraction -> {
+                        mapOf(slashCommand.options[0].name to (interaction as GuildUserCommandInteraction).targetId)
                     }
+                    else -> {
+                        interaction.data.data.options.value?.associate {
+                            it.name to it.value.value?.value
+                        }.orEmpty()
+                    }
+                }
 
-                    var panel: InteractivePanel? = null
-                    val result = interaction.respondPublic {
-                        object : SlashCommandExecutionBuilder {
-                            override fun respond(builder: MessageCreateBuilder.() -> Unit) {
-                                this@respondPublic.builder()
-                            }
-                            override fun respondPanel(builder: InteractivePanelBuilder.() -> Unit) {
-                                panel = this@respondPublic.respondPanel(builder)
-                            }
-                        }.(slashCommand.execute)(interaction.user, interaction.getGuildOrNull(), options)
-                    }
-                    if (panel != null) {
-                        val message = kord.with(EntitySupplyStrategy.rest).getOriginalInteraction(result.applicationId, result.token)
-                        somnus.registerInteractivePanel(message.id, panel!!)
-                    }
+                var panel: InteractivePanel? = null
+                val result = interaction.respondPublic {
+                    object : SlashCommandExecutionBuilder {
+                        override fun respond(builder: MessageCreateBuilder.() -> Unit) {
+                            this@respondPublic.builder()
+                        }
+                        override fun respondPanel(builder: InteractivePanelBuilder.() -> Unit) {
+                            panel = this@respondPublic.respondPanel(builder)
+                        }
+                    }.(slashCommand.execute)(interaction.user, interaction.getGuildOrNull(), options)
+                }
+                if (panel != null) {
+                    val message = kord.with(EntitySupplyStrategy.rest).getOriginalInteraction(result.applicationId, result.token)
+                    somnus.registerInteractivePanel(message.id, panel!!)
                 }
             }
         }

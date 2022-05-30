@@ -1,6 +1,7 @@
 package ai.arcblroth.somnus3
 
 import ai.arcblroth.somnus3.activity.ActivityDetector
+import ai.arcblroth.somnus3.commands.impl.update
 import ai.arcblroth.somnus3.commands.registerCommandCallbacks
 import ai.arcblroth.somnus3.mcserver.ServerInfoProvider
 import ai.arcblroth.somnus3.panel.InteractivePanel
@@ -16,6 +17,7 @@ import dev.kord.core.entity.User
 import dev.kord.core.entity.channel.TextChannel
 import dev.kord.core.event.gateway.ReadyEvent
 import dev.kord.core.event.interaction.ButtonInteractionCreateEvent
+import dev.kord.core.event.interaction.GuildApplicationCommandInteractionCreateEvent
 import dev.kord.core.event.message.MessageCreateEvent
 import dev.kord.core.event.user.PresenceUpdateEvent
 import dev.kord.core.on
@@ -84,10 +86,18 @@ class Somnus(private val config: Config, private val serverInfoProvider: ServerI
                 val tokens = command.split(Regex("\\s+?"))
                 handleWittyResponses(message, author, command, tokens)
 
-                if (command.startsWith(Constants.PREFIX)) {
-                    commands.handleMessage(message, author, tokens[0].substring(1), tokens)
+                if (!author.isBot) {
+                    update(message.channel, author)
+                    if (command.startsWith(Constants.PREFIX)) {
+                        commands.handleMessage(message, author, tokens[0].substring(1), tokens)
+                    }
                 }
             }
+        }
+
+        kord.on<GuildApplicationCommandInteractionCreateEvent> {
+            update(interaction.channel, interaction.user)
+            commands.handleSlashCommand(this)
         }
 
         kord.on<ButtonInteractionCreateEvent> {

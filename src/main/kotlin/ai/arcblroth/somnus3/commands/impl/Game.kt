@@ -10,7 +10,8 @@ import ai.arcblroth.somnus3.panel.InteractivePanelBuilder
 import ai.arcblroth.somnus3.respond
 import dev.kord.common.entity.Snowflake
 import dev.kord.core.Kord
-import dev.kord.core.entity.Message
+import dev.kord.core.behavior.channel.MessageChannelBehavior
+import dev.kord.core.behavior.channel.createMessage
 import dev.kord.core.entity.User
 import dev.kord.rest.builder.message.create.MessageCreateBuilder
 import kotlin.math.abs
@@ -215,7 +216,7 @@ fun CommandRegistry.registerGameCommands(kord: Kord, config: Config) {
     }
 }
 
-suspend fun update(msg: Message, author: User) {
+suspend fun update(channel: MessageChannelBehavior, author: User) {
     var response: (MessageCreateBuilder.() -> Unit)? = null
     val context = object : SlashCommandExecutionBuilder {
         override fun respond(builder: MessageCreateBuilder.() -> Unit) {
@@ -259,7 +260,7 @@ suspend fun update(msg: Message, author: User) {
     }
 
     if (response != null) {
-        msg.respond(response!!)
+        channel.createMessage(response!!)
     }
 }
 

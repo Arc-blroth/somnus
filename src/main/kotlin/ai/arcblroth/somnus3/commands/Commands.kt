@@ -7,8 +7,13 @@ import ai.arcblroth.somnus3.mcserver.ServerInfoProvider
 import dev.kord.core.Kord
 import dev.kord.core.entity.Message
 import dev.kord.core.entity.User
+import dev.kord.core.event.interaction.GuildApplicationCommandInteractionCreateEvent
 
 class Commands internal constructor(private val registry: CommandRegistry) {
+    suspend fun handleSlashCommand(event: GuildApplicationCommandInteractionCreateEvent) {
+        registry.handleSlashCommand(event)
+    }
+
     suspend fun handleMessage(message: Message, author: User, commandPrefix: String, tokens: List<String>) {
         registry.handleMessage(message, author, commandPrefix, tokens)
     }
