@@ -18,6 +18,15 @@ object PlayerDataTable : PlayerSnowflakeIdTable() {
     val bedType = enumeration("bedType", BedType::class)
 }
 
+object AngelDataTable : PlayerSnowflakeIdTable() {
+    val type = enumeration("type", AngelType::class).default(AngelType.LUNA)
+    val digModifier = double("digModifier").default(1.0)
+    val eatModifier = double("eatModifier").default(1.0)
+    val learnModifier = double("learnModifier").default(1.0)
+    val gameModifier = double("gameModifier").default(1.0)
+    val worshipModifier = double("worshipModifier").default(1.0)
+}
+
 object PreferencesDataTable : PlayerSnowflakeIdTable() {
     val showDeathMessages = bool("showDeathMessages").default(true)
 }

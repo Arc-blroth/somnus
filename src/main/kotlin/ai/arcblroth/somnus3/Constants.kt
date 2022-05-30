@@ -48,6 +48,9 @@ object Constants {
     const val SWAG_NAME = "Sr. Gomez"
     const val SWAG_IMG = "https://media.discordapp.net/attachments/756279756374409236/798971096996642816/image0.jpg"
 
+    const val SUMMON_MONEY_COST = 1000
+    const val SUMMON_SWAG_COST = 100
+
     // Data Handling
     @OptIn(ExperimentalSerializationApi::class)
     val lenientJson = Json {

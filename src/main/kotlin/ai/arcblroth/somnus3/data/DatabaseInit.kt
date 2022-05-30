@@ -16,7 +16,7 @@ fun initDatabase() {
     }
     Database.connect("jdbc:sqlite:$DB_FILE", databaseConfig = DatabaseConfig { useNestedTransactions = true })
     transaction {
-        SchemaUtils.create(PlayerDataTable, PreferencesDataTable, CounterDataTable)
+        SchemaUtils.create(PlayerDataTable, AngelDataTable, PreferencesDataTable, CounterDataTable)
     }
     println("PlayerData and CounterData tables created!")
 }

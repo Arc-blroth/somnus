@@ -2,12 +2,14 @@ package ai.arcblroth.somnus3.commands.impl
 
 import ai.arcblroth.somnus3.Constants
 import ai.arcblroth.somnus3.commands.UserOption
+import ai.arcblroth.somnus3.data.AngelData
 import ai.arcblroth.somnus3.data.PlayerData
 import dev.kord.core.entity.User
 import dev.kord.rest.builder.message.EmbedBuilder
 import dev.kord.rest.builder.message.create.MessageCreateBuilder
 import dev.kord.rest.builder.message.create.embed
 import kotlinx.datetime.Clock
+import java.util.stream.Collectors
 
 /**
  * Adds an embed to this message in the standardized format used for most of Somnus' functions.
@@ -51,6 +53,7 @@ fun MessageCreateBuilder.wrongUserMessage(target: String) = wrongUserMessage(thi
  */
 fun MessageCreateBuilder.poorMessage(author: User, type: String, cost: Int) {
     somnusEmbed {
+        color = Constants.ERROR_COLOR
         title = "${author.username} doesn't have enough money to buy $type"
         description = "That costs \$$cost."
     }
@@ -87,3 +90,39 @@ fun MessageCreateBuilder.deathMessage(author: User, data: PlayerData, bean: Bool
         }
     }
 }
+
+/**
+ * Embed content for reporting sleep angel stats.
+ */
+fun EmbedBuilder.angelStats(data: AngelData) {
+    with(data) {
+        color = angelType.rarity.color
+
+        thumbnail {
+            url = angelType.uiEmoji.codePoints().mapToObj { it.toString(16).lowercase() }.collect(
+                Collectors.joining("-", "https://raw.githubusercontent.com/twitter/twemoji/master/assets/72x72/", ".png")
+            )
+        }
+
+        description = if (angelType.hpDamageModifier == 1) {
+            angelType.flavor
+        } else {
+            angelType.flavor + "\n**WARNING**: This angel increases the amount of HP you lose per day!"
+        }
+
+        field("Sleep", false) { formatModifier(angelType.sleepModifier) }
+        if (angelType.hpDamageModifier != 1) {
+            field("HP Loss / Day", false) { String.format("%+d", -angelType.hpDamageModifier) }
+        }
+
+        field("Digging", true) { formatModifier(digModifier) }
+        field("Eating", true) { formatModifier(eatModifier) }
+        field("Learning", true) { formatModifier(learnModifier) }
+        field("Gaming", true) { formatModifier(gameModifier) }
+        field("Worshipping", true) { formatModifier(worshipModifier) }
+    }
+}
+
+fun formatModifier(modifier: Double) = String.format("%+.0f%%", (modifier - 1.0) * 100)
+
+fun formatRarity(rarity: Double) = String.format("%.2f%%", rarity * 100)

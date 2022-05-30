@@ -30,19 +30,22 @@ fun CommandRegistry.registerGameCommands(kord: Kord, config: Config) {
         execute = { author, _, options ->
             withOptionalUserArg(kord, options["player"] as Snowflake?, author) { user ->
                 withPlayerData(user.id) {
-                    respond {
-                        somnusEmbed(thumbnailUser = user) {
-                            title = "${user.username}'s Stats"
-                            field("Sleep Points", true) {
-                                "${if (sleepPoints > 0) ":zzz:" else ":warning:"} $sleepPoints"
+                    withAngelData(user.id) {
+                        respond {
+                            somnusEmbed(thumbnailUser = user) {
+                                title = "${user.username}'s Stats"
+                                field("Sleep Points", true) {
+                                    "${if (sleepPoints > 0) ":zzz:" else ":warning:"} $sleepPoints"
+                                }
+                                field("Knowledge Points", false) { ":brain: $knowledgePoints" }
+                                field("Money", true) { ":money_with_wings: \$$moneyPoints" }
+                                field("HP", true) { ":heart: $hitPoints" }
+                                field("Gaming Sessions", false) { ":video_game: $gamePoints" }
+                                field("Swag Power", true) { ":sunglasses: $swagPoints" }
+                                field("Furryness", true) { ":chipmunk: ${furryPoints.toInt()}" }
+                                field("Current Bed", false) { ":bed: ${bedType.uiName}" }
+                                field("Sleep Angel", false) { "${angelType.uiEmoji} ${angelType.uiName}" }
                             }
-                            field("Knowledge Points", false) { ":brain: $knowledgePoints" }
-                            field("Money", true) { ":money_with_wings: \$$moneyPoints" }
-                            field("HP", true) { ":heart: $hitPoints" }
-                            field("Gaming Sessions", false) { ":video_game: $gamePoints" }
-                            field("Swag Power", true) { ":sunglasses: $swagPoints" }
-                            field("Furryness", true) { ":chipmunk: ${furryPoints.toInt()}" }
-                            field("Current Bed", false) { ":bed: ${bedType.uiName}" }
                         }
                     }
                 }
@@ -58,7 +61,9 @@ fun CommandRegistry.registerGameCommands(kord: Kord, config: Config) {
                 val coalFound = floor(random * Constants.DIG_REWARD_MULT + 1).toInt()
                 val knowledgeBonus = knowledgePoints * Constants.DIG_LEARN_MULTI
                 val furryBonus = floor(furryPoints)
-                val actualCoalFound = applyPowerEffects(random * (Constants.DIG_REWARD_MULT + knowledgeBonus + furryBonus) + 1)
+                val actualCoalFound = withAngelData(author.id) {
+                    applyPowerEffects(random * digModifier * (Constants.DIG_REWARD_MULT + knowledgeBonus + furryBonus) + 1)
+                }
                 sleepPoints -= Constants.DIG_COST
                 moneyPoints += actualCoalFound
 
@@ -82,7 +87,9 @@ fun CommandRegistry.registerGameCommands(kord: Kord, config: Config) {
                     }
                 } else {
                     val random = Math.random()
-                    val hpGained = applyPowerEffects(random * (Constants.RAMEN_REWARD_MAX - 1) + 1)
+                    val hpGained = withAngelData(author.id) {
+                        applyPowerEffects(random * eatModifier * (Constants.RAMEN_REWARD_MAX - 1) + 1)
+                    }
                     hitPoints += hpGained
                     moneyPoints -= Constants.RAMEN_COST
 
@@ -107,10 +114,12 @@ fun CommandRegistry.registerGameCommands(kord: Kord, config: Config) {
                     }
                 } else {
                     val random = Math.random()
-                    val hpGained = applyPowerEffects(
-                        random * (Constants.MSG_REWARD_MAX - Constants.MSG_REWARD_MIN) + Constants.MSG_REWARD_MIN,
-                        round = true
-                    )
+                    val hpGained = withAngelData(author.id) {
+                        applyPowerEffects(
+                            random * eatModifier * (Constants.MSG_REWARD_MAX - Constants.MSG_REWARD_MIN) + Constants.MSG_REWARD_MIN,
+                            round = true
+                        )
+                    }
                     hitPoints += hpGained
                     moneyPoints -= Constants.MSG_COST
 
@@ -131,7 +140,9 @@ fun CommandRegistry.registerGameCommands(kord: Kord, config: Config) {
             withPlayerData(author.id) {
                 val random = Math.random()
                 val maxKp = Constants.LEARN_REWARD_MAX + if (bedType == BedType.COTTON) { 3 } else { 0 }
-                val kpGained = applyPowerEffects(random * (maxKp - 1) + 1)
+                val kpGained = withAngelData(author.id) {
+                    applyPowerEffects(random * learnModifier * (maxKp - 1) + 1)
+                }
                 knowledgePoints += kpGained
                 sleepPoints -= Constants.LEARN_COST
 
@@ -151,7 +162,9 @@ fun CommandRegistry.registerGameCommands(kord: Kord, config: Config) {
             withPlayerData(author.id) {
                 val random = Math.random()
                 val baseReward = Constants.GAME_REWARD + if (bedType == BedType.POLY) { 2 } else { 0 }
-                val hpGained = applyPowerEffects(random * baseReward + 1)
+                val hpGained = withAngelData(author.id) {
+                    applyPowerEffects(random * gameModifier * baseReward + 1)
+                }
                 val knowledgeLost = floor(random * Constants.GAME_COST + 1).toInt()
                 knowledgePoints -= knowledgeLost
                 hitPoints += hpGained
@@ -174,7 +187,9 @@ fun CommandRegistry.registerGameCommands(kord: Kord, config: Config) {
             withPlayerData(author.id) {
                 val random = Math.random()
                 val baseReward = Constants.GAME_REWARD + if (bedType == BedType.SILK) { 4 } else { 0 }
-                val swagGained = applyPowerEffects(random * (baseReward + gamePoints) + 1)
+                val swagGained = withAngelData(author.id) {
+                    applyPowerEffects(random * worshipModifier * (baseReward + gamePoints) + 1)
+                }
                 val sleepLost = floor(random * Constants.WORSHIP_COST + 1).toInt()
                 swagPoints += swagGained
                 sleepPoints -= sleepLost
@@ -214,16 +229,20 @@ suspend fun update(msg: Message, author: User) {
             val now = System.currentTimeMillis()
             val daysSince = floor((now - lastDailyRewardTime) / 86400000.0).toInt()
             if (daysSince > 0) {
-                // Update sleep points
-                sleepPoints += daysSince * (Constants.SLEEP_POINTS_PER_DAY + bedType.ordinal * Constants.SLEEP_POINTS_PER_BED_TIER)
-                lastDailyRewardTime += daysSince * 86400000L
+                withAngelData(author.id) {
+                    // Update sleep points
+                    val baseSleep = Constants.SLEEP_POINTS_PER_DAY + bedType.ordinal * Constants.SLEEP_POINTS_PER_BED_TIER
+                    sleepPoints += daysSince * (angelType.sleepModifier * baseSleep).toInt()
+                    lastDailyRewardTime += daysSince * 86400000L
 
-                // 1 hp of damage is taken a day.
-                hitPoints -= daysSince * Constants.DAMAGE_PER_DAY
+                    // 1 hp of damage is taken a day.
+                    val actualDamagePerDay = angelType.hpDamageModifier * Constants.DAMAGE_PER_DAY
+                    hitPoints -= daysSince * actualDamagePerDay
 
-                // If missing sleep you take another 2 points of damage.
-                if (sleepPoints < 0) {
-                    hitPoints -= daysSince * Constants.DAMAGE_PER_DAY * abs(sleepPoints / 2)
+                    // If missing sleep you take another 2 points of damage.
+                    if (sleepPoints < 0) {
+                        hitPoints -= daysSince * actualDamagePerDay * abs(sleepPoints / 2)
+                    }
                 }
 
                 // Bed effects
@@ -245,11 +264,12 @@ suspend fun update(msg: Message, author: User) {
 }
 
 fun SlashCommandExecutionBuilder.onDeath(victim: User, data: PlayerData, allowSuppress: Boolean) {
-    var showMessage = true
-    if (allowSuppress) {
+    val showMessage = if (allowSuppress) {
         withPreferencesData(victim.id) {
-            showMessage = showDeathMessages
+            showDeathMessages
         }
+    } else {
+        true
     }
 
     if (showMessage) {

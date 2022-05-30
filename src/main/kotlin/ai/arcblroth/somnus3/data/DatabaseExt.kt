@@ -13,45 +13,49 @@ import org.jetbrains.exposed.sql.transactions.transaction
  * Opens a database transaction to `UPDATE` the given player's data.
  * If the player doesn't exist in the database, new data will be inserted.
  */
-fun withPlayerData(player: Snowflake, block: PlayerData.() -> Unit) =
+fun <T> withPlayerData(player: Snowflake, block: PlayerData.() -> T) =
     withData(PlayerData, PlayerDataTable, player, PlayerData::initPlayerData, block)
 
-fun withPreferencesData(player: Snowflake, block: PreferencesData.() -> Unit) =
+fun <T> withAngelData(player: Snowflake, block: AngelData.() -> T) =
+    withData(AngelData, AngelDataTable, player, {}, block)
+
+fun <T> withPreferencesData(player: Snowflake, block: PreferencesData.() -> T) =
     withData(PreferencesData, PreferencesDataTable, player, { showDeathMessages = true }, block)
 
-fun withCounterData(counterName: String, block: CounterData.() -> Unit) =
+fun <T> withCounterData(counterName: String, block: CounterData.() -> T) =
     withData(CounterData, CounterDataTable, null, { name = counterName; counter = 0 }, block, { it.name eq counterName })
 
 /**
  * Opens a database transaction to `UPDATE` some data type.
  * If existing data doesn't exist in the database, new data will be inserted.
  */
-private inline fun <reified Key, reified Table, reified DataType, reified DataTypeClass> withData(
+private inline fun <reified Key, reified Table, reified DataType, reified DataTypeClass, Output> withData(
     dataTypeClass: DataTypeClass,
     table: Table,
     key: Key?,
     crossinline defaultBuilder: DataType.() -> Unit,
-    noinline block: DataType.() -> Unit,
+    noinline block: DataType.() -> Output,
     crossinline finder: SqlExpressionBuilder.(Table) -> Op<Boolean> = { it.id eq key },
-)
+): Output
     where Key : Comparable<Key>,
           Table : IdTable<Key>,
           DataType : Entity<Key>,
-          DataTypeClass : EntityClass<Key, DataType> {
+          DataTypeClass : EntityClass<Key, DataType> =
     transaction {
         val data = dataTypeClass.find { finder(table) }.singleOrNull()
 
         @Suppress("IfThenToElvis")
-        if (data == null) {
+        return@transaction if (data == null) {
+            var output: Output? = null
             dataTypeClass.new(key) {
                 defaultBuilder()
-                block()
+                output = block()
             }
+            output!!
         } else {
             data.block()
         }
     }
-}
 
 /**
  * Initial player data for new players.

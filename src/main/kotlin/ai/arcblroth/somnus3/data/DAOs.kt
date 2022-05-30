@@ -19,6 +19,17 @@ class PlayerData(id: EntityID<Snowflake>) : SnowflakeEntity(id) {
     var bedType by PlayerDataTable.bedType
 }
 
+class AngelData(id: EntityID<Snowflake>) : SnowflakeEntity(id) {
+    companion object : SnowflakeEntityClass<AngelData>(AngelDataTable)
+
+    var angelType by AngelDataTable.type
+    var digModifier by AngelDataTable.digModifier
+    var eatModifier by AngelDataTable.eatModifier
+    var learnModifier by AngelDataTable.learnModifier
+    var gameModifier by AngelDataTable.gameModifier
+    var worshipModifier by AngelDataTable.worshipModifier
+}
+
 class PreferencesData(id: EntityID<Snowflake>) : SnowflakeEntity(id) {
     companion object : SnowflakeEntityClass<PreferencesData>(PreferencesDataTable)
 
