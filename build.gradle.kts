@@ -43,7 +43,12 @@ tasks {
         archiveBaseName.set("somnus")
         archiveClassifier.set("")
         manifest {
-            attributes(mapOf("Main-Class" to mainClassName))
+            attributes(
+                mapOf(
+                    "Main-Class" to mainClassName,
+                    "Implementation-Version" to archiveVersion,
+                )
+            )
         }
     }
 

@@ -3,6 +3,7 @@ package ai.arcblroth.somnus3
 import ai.arcblroth.somnus3.activity.ActivityDetector
 import ai.arcblroth.somnus3.commands.impl.update
 import ai.arcblroth.somnus3.commands.registerCommandCallbacks
+import ai.arcblroth.somnus3.feeds.XkcdFeed
 import ai.arcblroth.somnus3.mcserver.ServerInfoProvider
 import ai.arcblroth.somnus3.panel.InteractivePanel
 import ai.arcblroth.somnus3.panel.InteractivePanelBuilder
@@ -112,20 +113,20 @@ class Somnus(private val config: Config, private val serverInfoProvider: ServerI
             }
         }
 
-        if (config.enableActivityDetectors) {
-            suspend fun bakeActivityDetectorConfig(activityDetectorConfig: ActivityDetectorConfig) =
-                activityDetectorConfig.mapValues { kord.getChannel(it.value) as? TextChannel? }
-                    .filterValues { it != null }
-                    .mapValues { it.value!! }
+        suspend fun bakePerGuildChannelMap(map: Map<Snowflake, Snowflake>) =
+            map.mapValues { kord.getChannel(it.value) as? TextChannel? }
+                .filterValues { it != null }
+                .mapValues { it.value!! }
 
-            val leagueConfig = bakeActivityDetectorConfig(config.leagueDetectorConfig!!)
+        if (config.enableActivityDetectors) {
+            val leagueConfig = bakePerGuildChannelMap(config.leagueDetectorConfig!!)
             val leagueDetector = ActivityDetector(leagueConfig, "@%s is playing **LEAGUE OF LEGENDS**") {
                 it.applicationId in config.leagueAppIds &&
                     it.name.equals("league of legends", ignoreCase = true) &&
                     it.state.equals("in game", ignoreCase = true)
             }
 
-            val intellijConfig = bakeActivityDetectorConfig(config.intellijDetectorConfig!!)
+            val intellijConfig = bakePerGuildChannelMap(config.intellijDetectorConfig!!)
             val intellijDetector = ActivityDetector(intellijConfig, "@%s is writing bugs again") {
                 it.applicationId in config.intellijAppIds
             }
@@ -136,6 +137,11 @@ class Somnus(private val config: Config, private val serverInfoProvider: ServerI
             kord.on<PresenceUpdateEvent> {
                 activityDetectors.forEach { it.update(this) }
             }
+        }
+
+        if (config.enableFeeds) {
+            val xkcdConfig = bakePerGuildChannelMap(config.xkcdSubscribers!!)
+            XkcdFeed.start(kord, xkcdConfig)
         }
     }
 

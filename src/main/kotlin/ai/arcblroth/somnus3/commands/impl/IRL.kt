@@ -4,10 +4,10 @@ import ai.arcblroth.somnus3.Config
 import ai.arcblroth.somnus3.Constants
 import ai.arcblroth.somnus3.commands.CommandRegistry
 import ai.arcblroth.somnus3.mcserver.ServerInfoProvider
+import ai.arcblroth.somnus3.request
 import dev.kord.common.entity.ButtonStyle
 import dev.kord.core.Kord
 import io.ktor.client.*
-import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
 import kotlinx.datetime.Instant
@@ -69,10 +69,7 @@ fun CommandRegistry.registerIRLCommands(kord: Kord, config: Config, serverInfoPr
     slash("fire") {
         description = "Query what fires are burning in California right now, sorted by most recent."
         execute = { _, _, _ ->
-            val response = HttpClient().request {
-                userAgent("Somnus")
-                url("https://www.fire.ca.gov/umbraco/api/IncidentApi/List?inactive=false")
-            }
+            val response = request("https://www.fire.ca.gov/umbraco/api/IncidentApi/List?inactive=false")
             val data = Constants.lenientJson.decodeFromString<List<CalfireFireData>>(response.bodyAsText())
             if (data.isEmpty()) {
                 respond {

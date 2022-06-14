@@ -8,13 +8,16 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.decodeFromStream
 import kotlinx.serialization.json.encodeToStream
 import org.slf4j.LoggerFactory
+import java.io.File
 import java.io.IOException
 import java.nio.file.Paths
 
 const val CONFIG_FILE = ".data/config.json"
+const val PERSISTENT_CONFIG_FILE = ".data/persistent.json"
 
 // a map of guild -> log channel
 typealias ActivityDetectorConfig = Map<Snowflake, Snowflake>
+typealias FeedConfig = Map<Snowflake, Snowflake>
 
 @Serializable
 data class Config(
@@ -43,6 +46,10 @@ data class Config(
     val leagueAppIds: List<Snowflake> = listOf(Snowflake(356869127241072640L), Snowflake(401518684763586560L)),
     val intellijDetectorConfig: ActivityDetectorConfig? = null,
     val intellijAppIds: List<Snowflake> = listOf(Snowflake(547842383207858178L)),
+
+    // feed options
+    val enableFeeds: Boolean = false,
+    val xkcdSubscribers: FeedConfig? = null,
 ) {
     @Serializable
     data class WorshipConfig(
@@ -56,37 +63,63 @@ data class Config(
             requireNotNull(leagueDetectorConfig) { "A valid config must be specified for the League detector to work!" }
             requireNotNull(intellijDetectorConfig) { "A valid config must be specified for the IntelliJ detector to work!" }
         }
+        if (enableFeeds) {
+            requireNotNull(xkcdSubscribers) { "A valid config must be specified for xkcd subscriptions!" }
+        }
+    }
+}
+
+@Serializable
+data class PersistentConfig(
+    // feed state
+    var lastXkcd: Long = 0,
+)
+
+private val LOGGER = LoggerFactory.getLogger("Config")
+private val JSON = Json {
+    encodeDefaults = true
+    prettyPrint = true
+}
+
+@OptIn(ExperimentalSerializationApi::class)
+private inline fun <reified T> readConfig(file: File, descriptor: String, defaultBuilder: () -> T): T {
+    return if (!file.exists()) {
+        defaultBuilder()
+    } else {
+        try {
+            file.inputStream().use { JSON.decodeFromStream(it) }
+        } catch (e: IOException) {
+            LOGGER.error("Couldn't load $descriptor file, using defaults")
+            defaultBuilder()
+        }
     }
 }
 
 @OptIn(ExperimentalSerializationApi::class)
-fun loadConfig(): Config {
-    val logger = LoggerFactory.getLogger("Config")
-    val json = Json {
-        encodeDefaults = true
-        prettyPrint = true
+private inline fun <reified T> writeConfig(file: File, descriptor: String, config: T) {
+    try {
+        file.outputStream().use { JSON.encodeToStream(config, it) }
+    } catch (e: IOException) {
+        LOGGER.warn("Couldn't update $descriptor file")
     }
+}
+
+fun loadConfig(): Config {
     val file = Paths.get(System.getProperty("user.dir"), CONFIG_FILE).toFile()
 
     // Read config from disk
-    val config = if (!file.exists()) {
-        Config()
-    } else {
-        try {
-            file.inputStream().use { json.decodeFromStream(it) }
-        } catch (e: IOException) {
-            logger.error("Couldn't load config file, using defaults")
-            return Config()
-        }
-    }
+    val config = readConfig(file, "config", ::Config)
 
     // Write config back to disk
     // This ensures new properties are represented in the config file
-    try {
-        file.outputStream().use { json.encodeToStream(config, it) }
-    } catch (e: IOException) {
-        logger.warn("Couldn't update config file")
-    }
+    writeConfig(file, "config", config)
 
     return config
+}
+
+suspend fun withPersistentConfig(block: suspend PersistentConfig.() -> Unit) {
+    val file = Paths.get(System.getProperty("user.dir"), PERSISTENT_CONFIG_FILE).toFile()
+    val config = readConfig(file, "persistent config", ::PersistentConfig)
+    config.block()
+    writeConfig(file, "persistent config", config)
 }
