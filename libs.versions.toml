@@ -1,13 +1,13 @@
 [versions]
-kotlin = "1.6.21"
-ktlint = "10.2.1"
+kotlin = "1.7.10"
+ktlint = "11.0.0"
 shadow = "7.1.2"
 slf4j = "1.7.36"
-kord = "0.8.0-M13"
-sqlite-jdbc = "3.36.0.3"
-exposed = "0.38.2"
-cache4k = "0.5.0"
-reservoir-sampling = "0.18"
+kord = "0.8.0-M16"
+sqlite-jdbc = "3.39.2.1"
+exposed = "0.39.2"
+cache4k = "0.7.0"
+reservoir-sampling = "0.25"
 
 [plugins]
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
