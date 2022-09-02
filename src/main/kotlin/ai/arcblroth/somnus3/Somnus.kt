@@ -140,8 +140,10 @@ class Somnus(private val config: Config, private val serverInfoProvider: ServerI
         }
 
         if (config.enableFeeds) {
-            val xkcdConfig = bakePerGuildChannelMap(config.xkcdSubscribers!!)
-            XkcdFeed.start(kord, xkcdConfig)
+            if (config.xkcdSubscribers != null) {
+                val xkcdConfig = bakePerGuildChannelMap(config.xkcdSubscribers)
+                XkcdFeed.start(kord, xkcdConfig)
+            }
         }
     }
 

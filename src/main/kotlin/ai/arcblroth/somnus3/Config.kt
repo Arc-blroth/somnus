@@ -63,9 +63,6 @@ data class Config(
             requireNotNull(leagueDetectorConfig) { "A valid config must be specified for the League detector to work!" }
             requireNotNull(intellijDetectorConfig) { "A valid config must be specified for the IntelliJ detector to work!" }
         }
-        if (enableFeeds) {
-            requireNotNull(xkcdSubscribers) { "A valid config must be specified for xkcd subscriptions!" }
-        }
     }
 }
 
