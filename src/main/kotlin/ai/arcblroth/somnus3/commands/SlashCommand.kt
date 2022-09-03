@@ -3,6 +3,7 @@ package ai.arcblroth.somnus3.commands
 import ai.arcblroth.somnus3.panel.InteractivePanelBuilder
 import dev.kord.core.entity.Guild
 import dev.kord.core.entity.Message
+import dev.kord.core.entity.ReactionEmoji
 import dev.kord.core.entity.User
 import dev.kord.rest.builder.message.create.MessageCreateBuilder
 
@@ -19,6 +20,7 @@ class SlashCommandBuilder {
 interface SlashCommandExecutionBuilder {
     fun respond(builder: MessageCreateBuilder.() -> Unit)
     fun respondPanel(builder: InteractivePanelBuilder.() -> Unit)
+    fun acknowledge(emoji: ReactionEmoji, message: String)
 }
 
 @SomnusCommandsDsl

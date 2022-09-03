@@ -7,11 +7,10 @@ import ai.arcblroth.somnus3.commands.SlashCommandExecutionBuilder
 import ai.arcblroth.somnus3.commands.UserOption
 import ai.arcblroth.somnus3.data.*
 import ai.arcblroth.somnus3.panel.InteractivePanelBuilder
-import ai.arcblroth.somnus3.respond
 import dev.kord.common.entity.Snowflake
 import dev.kord.core.Kord
 import dev.kord.core.behavior.channel.MessageChannelBehavior
-import dev.kord.core.behavior.channel.createMessage
+import dev.kord.core.entity.ReactionEmoji
 import dev.kord.core.entity.User
 import dev.kord.rest.builder.message.create.MessageCreateBuilder
 import dev.kord.rest.builder.message.create.UserMessageCreateBuilder
@@ -226,6 +225,7 @@ suspend fun update(channel: MessageChannelBehavior, author: User) {
             response.apply(builder)
         }
         override fun respondPanel(builder: InteractivePanelBuilder.() -> Unit) = throw NotImplementedError()
+        override fun acknowledge(emoji: ReactionEmoji, message: String) = throw NotImplementedError()
     }
 
     with(context) {

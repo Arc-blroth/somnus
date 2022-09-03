@@ -8,6 +8,7 @@ sqlite-jdbc = "3.39.2.1"
 exposed = "0.39.2"
 cache4k = "0.7.0"
 reservoir-sampling = "0.25"
+lavaplayer = "1.3.77"
 
 [plugins]
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
@@ -24,3 +25,4 @@ exposed-dao = { module = "org.jetbrains.exposed:exposed-dao", version.ref = "exp
 exposed-jdbc = { module = "org.jetbrains.exposed:exposed-jdbc", version.ref = "exposed" }
 cache4k = { module = "io.github.reactivecircus.cache4k:cache4k", version.ref = "cache4k" }
 reservoir-sampling = { module = "gr.james:random-sampling", version.ref = "reservoir-sampling" }
+lavaplayer = { module = "com.sedmelluq:lavaplayer", version.ref = "lavaplayer" }

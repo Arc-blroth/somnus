@@ -22,6 +22,7 @@ val mainClassName = "ai.arcblroth.somnus3.SomnusMain"
 repositories {
     mavenCentral()
     maven("https://oss.sonatype.org/content/repositories/snapshots")
+    maven("https://m2.dv8tion.net/releases")
 }
 
 dependencies {
@@ -29,6 +30,12 @@ dependencies {
 
     val versionCatalog = project.extensions.getByType<VersionCatalogsExtension>().named("libs")
     versionCatalog.libraryAliases.forEach { implementation(versionCatalog.findLibrary(it).get()) }
+
+    configurations["implementation"].dependencies.find { it.group == "dev.kord" && it.name == "kord-core" }!!.apply {
+        (this as ExternalModuleDependency).capabilities {
+            requireCapability("dev.kord:core-voice:${this@apply.version}")
+        }
+    }
 }
 
 tasks {

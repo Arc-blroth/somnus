@@ -8,8 +8,10 @@ import ai.arcblroth.somnus3.respond
 import ai.arcblroth.somnus3.respondPanel
 import dev.kord.common.entity.Snowflake
 import dev.kord.core.Kord
+import dev.kord.core.behavior.interaction.respondEphemeral
 import dev.kord.core.behavior.interaction.respondPublic
 import dev.kord.core.entity.Message
+import dev.kord.core.entity.ReactionEmoji
 import dev.kord.core.entity.User
 import dev.kord.core.entity.interaction.GuildUserCommandInteraction
 import dev.kord.core.event.interaction.GuildApplicationCommandInteractionCreateEvent
@@ -149,20 +151,43 @@ class CommandRegistry private constructor(private val kord: Kord, private val so
                     }
                 }
 
-                var panel: InteractivePanel? = null
-                val result = interaction.respondPublic {
-                    object : SlashCommandExecutionBuilder {
-                        override fun respond(builder: MessageCreateBuilder.() -> Unit) {
-                            this@respondPublic.builder()
+                var hasResponse = false
+                var messageBuilder: (MessageCreateBuilder.() -> Unit)? = null
+                var panelBuilder: (InteractivePanelBuilder.() -> Unit)? = null
+                var ackBuilder: Pair<ReactionEmoji, String>? = null
+                object : SlashCommandExecutionBuilder {
+                    override fun respond(builder: MessageCreateBuilder.() -> Unit) {
+                        check(!hasResponse)
+                        hasResponse = true
+                        messageBuilder = builder
+                    }
+                    override fun respondPanel(builder: InteractivePanelBuilder.() -> Unit) {
+                        check(!hasResponse)
+                        hasResponse = true
+                        panelBuilder = builder
+                    }
+                    override fun acknowledge(emoji: ReactionEmoji, message: String) {
+                        check(!hasResponse)
+                        hasResponse = true
+                        ackBuilder = Pair(emoji, message)
+                    }
+                }.(slashCommand.execute)(interaction.user, interaction.getGuildOrNull(), options)
+
+                check(hasResponse) { "Command did not set any response" }
+                when {
+                    messageBuilder != null -> interaction.respondPublic(messageBuilder!!)
+                    panelBuilder != null -> {
+                        val panel: InteractivePanel
+                        val result = interaction.respondPublic { panel = respondPanel(panelBuilder!!) }
+                        val message = kord.with(EntitySupplyStrategy.rest).getOriginalInteraction(result.applicationId, result.token)
+                        somnus.registerInteractivePanel(message.id, panel)
+                    }
+                    else -> {
+                        val (emoji, message) = ackBuilder!!
+                        interaction.respondEphemeral {
+                            content = "${emoji.mention} $message"
                         }
-                        override fun respondPanel(builder: InteractivePanelBuilder.() -> Unit) {
-                            panel = this@respondPublic.respondPanel(builder)
-                        }
-                    }.(slashCommand.execute)(interaction.user, interaction.getGuildOrNull(), options)
-                }
-                if (panel != null) {
-                    val message = kord.with(EntitySupplyStrategy.rest).getOriginalInteraction(result.applicationId, result.token)
-                    somnus.registerInteractivePanel(message.id, panel!!)
+                    }
                 }
             }
         }
@@ -195,22 +220,42 @@ class CommandRegistry private constructor(private val kord: Kord, private val so
                 }
             }
 
-            var panel: InteractivePanel? = null
-            val result = message.respond actual@{
-                object : TextBasedSlashCommandExecutionBuilder {
-                    override val message: Message
-                        get() = message
+            var hasResponse = false
+            var messageBuilder: (MessageCreateBuilder.() -> Unit)? = null
+            var panelBuilder: (InteractivePanelBuilder.() -> Unit)? = null
+            var ackEmoji: ReactionEmoji? = null
+            object : TextBasedSlashCommandExecutionBuilder {
+                override val message: Message
+                    get() = message
 
-                    override fun respond(builder: MessageCreateBuilder.() -> Unit) {
-                        this@actual.builder()
+                override fun respond(builder: MessageCreateBuilder.() -> Unit) {
+                    check(!hasResponse)
+                    hasResponse = true
+                    messageBuilder = builder
+                }
+                override fun respondPanel(builder: InteractivePanelBuilder.() -> Unit) {
+                    check(!hasResponse)
+                    hasResponse = true
+                    panelBuilder = builder
+                }
+                override fun acknowledge(emoji: ReactionEmoji, message: String) {
+                    check(!hasResponse)
+                    hasResponse = true
+                    ackEmoji = emoji
+                }
+            }.(slashCommand.execute)(author, message.getGuildOrNull(), options)
+
+            check(hasResponse) { "Command did not set any response" }
+            when {
+                messageBuilder != null -> message.respond(messageBuilder!!)
+                panelBuilder != null -> {
+                    var panel: InteractivePanel? = null
+                    val result = message.respond { panel = respondPanel(panelBuilder!!) }
+                    if (panel != null && result != null) {
+                        somnus.registerInteractivePanel(result.id, panel!!)
                     }
-                    override fun respondPanel(builder: InteractivePanelBuilder.() -> Unit) {
-                        panel = this@actual.respondPanel(builder)
-                    }
-                }.(slashCommand.execute)(author, message.getGuildOrNull(), options)
-            }
-            if (panel != null && result != null) {
-                somnus.registerInteractivePanel(result.id, panel!!)
+                }
+                else -> message.addReaction(ackEmoji!!)
             }
         }
     }

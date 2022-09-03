@@ -8,6 +8,7 @@ import ai.arcblroth.somnus3.mcserver.ServerInfoProvider
 import ai.arcblroth.somnus3.panel.InteractivePanel
 import ai.arcblroth.somnus3.panel.InteractivePanelBuilder
 import ai.arcblroth.somnus3.panel.InteractivePanelBuilderImpl
+import ai.arcblroth.somnus3.soundboard.SoundboardManager
 import dev.kord.common.entity.ActivityType
 import dev.kord.common.entity.Snowflake
 import dev.kord.core.Kord
@@ -21,6 +22,7 @@ import dev.kord.core.event.interaction.ButtonInteractionCreateEvent
 import dev.kord.core.event.interaction.GuildApplicationCommandInteractionCreateEvent
 import dev.kord.core.event.message.MessageCreateEvent
 import dev.kord.core.event.user.PresenceUpdateEvent
+import dev.kord.core.event.user.VoiceStateUpdateEvent
 import dev.kord.core.on
 import dev.kord.gateway.Intent
 import dev.kord.gateway.PrivilegedIntent
@@ -39,6 +41,7 @@ import kotlin.time.Duration.Companion.minutes
 class Somnus(private val config: Config, private val serverInfoProvider: ServerInfoProvider?) {
     private val activityDetectors: MutableList<ActivityDetector> = mutableListOf()
     private val panels: Cache<Snowflake, InteractivePanel> = Cache.Builder().expireAfterWrite(5.minutes).build()
+    val soundboardManager = SoundboardManager()
 
     suspend fun start() {
         start {
@@ -111,6 +114,10 @@ class Somnus(private val config: Config, private val serverInfoProvider: ServerI
                     edit { it.updatePage(this) }
                 }
             }
+        }
+
+        kord.on<VoiceStateUpdateEvent> {
+            soundboardManager.update(this)
         }
 
         suspend fun bakePerGuildChannelMap(map: Map<Snowflake, Snowflake>) =

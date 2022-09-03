@@ -2,7 +2,7 @@ package ai.arcblroth.somnus3.commands
 
 import ai.arcblroth.somnus3.Config
 import ai.arcblroth.somnus3.Somnus
-import ai.arcblroth.somnus3.commands.impl.*
+import ai.arcblroth.somnus3.commands.impl.* // ktlint-disable no-unused-imports this is a bug
 import ai.arcblroth.somnus3.mcserver.ServerInfoProvider
 import dev.kord.core.Kord
 import dev.kord.core.entity.Message
@@ -31,6 +31,7 @@ suspend fun registerCommandCallbacks(
         registerGameV3Commands(kord, config)
         registerAdminCommands(kord, config)
         registerCounterCommands(kord, config)
+        registerVoiceCommands(kord, config, somnus)
         registerIRLCommands(kord, config, serverInfoProvider)
     }
     return Commands(registry)

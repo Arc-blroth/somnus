@@ -50,6 +50,9 @@ data class Config(
     // feed options
     val enableFeeds: Boolean = false,
     val xkcdSubscribers: FeedConfig? = null,
+
+    // soundboard options
+    val soundboardSounds: Map<String, String> = emptyMap(),
 ) {
     @Serializable
     data class WorshipConfig(
