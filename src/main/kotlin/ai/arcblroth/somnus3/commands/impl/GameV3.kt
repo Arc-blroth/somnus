@@ -21,6 +21,7 @@ fun CommandRegistry.registerGameV3Commands(kord: Kord, config: Config) {
                 optional = true,
                 onParseFailure = {
                     somnusEmbed {
+                        color = Constants.ERROR_COLOR
                         title = "We don't have that bed in stock!"
                         description = "Note that bed names are case-sensitive."
                     }
