@@ -283,4 +283,5 @@ fun SlashCommandExecutionBuilder.onDeath(victim: User, data: PlayerData, allowSu
     }
 
     data.initPlayerData()
+    data.hitPoints += (-4..4).random()
 }
