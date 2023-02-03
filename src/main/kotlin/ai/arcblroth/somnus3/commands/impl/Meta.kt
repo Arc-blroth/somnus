@@ -27,6 +27,7 @@ fun CommandRegistry.registerMetaCommands(kord: Kord, config: Config) {
                         `!game` - Take a break from learning and mining and GAME! Replenishes HP but might kill a few brain cells...
                         `!worship` - Increase your swag levels by praying to the god of destruction of the 47th universe.
                         `!showDeathMessages` - Toggle whether or not to show death messages. On by default.
+                        `!showWittyMessages` - Toggle whether or not to show automatic responses to messages. On by default.
                     """.trimIndent()
                 }
             }
@@ -47,6 +48,25 @@ fun CommandRegistry.registerMetaCommands(kord: Kord, config: Config) {
                 showDeathMessages = options["value"] as Boolean? ?: !showDeathMessages
                 respond {
                     content = "Death messages have been turned **${(if (showDeathMessages) "on" else "off")}**."
+                }
+            }
+        }
+    }
+
+    slash("showwittymessages") {
+        description = "Toggle whether or not to send automatic responses to messages (eg \"nice\"). On by default."
+        options = listOf(
+            BooleanOption(
+                name = "value",
+                description = "Send witty responses?",
+                optional = true,
+            )
+        )
+        execute = { author, _, options ->
+            withPreferencesData(author.id) {
+                showWittyMessages = options["value"] as Boolean? ?: !showWittyMessages
+                respond {
+                    content = "Witty messages have been turned **${(if (showWittyMessages) "on" else "off")}**."
                 }
             }
         }

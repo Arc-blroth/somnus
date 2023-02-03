@@ -3,6 +3,7 @@ package ai.arcblroth.somnus3
 import ai.arcblroth.somnus3.activity.ActivityDetector
 import ai.arcblroth.somnus3.commands.impl.update
 import ai.arcblroth.somnus3.commands.registerCommandCallbacks
+import ai.arcblroth.somnus3.data.withPreferencesData
 import ai.arcblroth.somnus3.feeds.XkcdFeed
 import ai.arcblroth.somnus3.mcserver.ServerInfoProvider
 import ai.arcblroth.somnus3.panel.InteractivePanel
@@ -155,6 +156,8 @@ class Somnus(private val config: Config, private val serverInfoProvider: ServerI
     }
 
     private suspend fun handleWittyResponses(message: Message, author: User, command: String, tokens: List<String>) {
+        if (withPreferencesData(author.id) { !showWittyMessages }) return
+
         val strippedCommand = command
             .replace(Constants.MENTION_FILTER, "")
             .replace(Constants.CHANNEL_FILTER, "")

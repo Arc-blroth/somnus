@@ -29,6 +29,7 @@ object AngelDataTable : PlayerSnowflakeIdTable() {
 
 object PreferencesDataTable : PlayerSnowflakeIdTable() {
     val showDeathMessages = bool("showDeathMessages").default(true)
+    val showWittyMessages = bool("showWittyMessages").default(true)
 }
 
 object CounterDataTable : IntIdTable() {
