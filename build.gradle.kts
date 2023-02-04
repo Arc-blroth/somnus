@@ -23,6 +23,7 @@ repositories {
     mavenCentral()
     maven("https://oss.sonatype.org/content/repositories/snapshots")
     maven("https://m2.dv8tion.net/releases")
+    maven("https://jitpack.io")
 }
 
 dependencies {

@@ -32,6 +32,8 @@ import dev.kord.rest.builder.message.create.MessageCreateBuilder
 import dev.kord.rest.builder.message.create.UserMessageCreateBuilder
 import dev.kord.rest.builder.message.create.actionRow
 import dev.kord.rest.builder.message.create.embed
+import dev.maow.owo.util.Options
+import dev.maow.owo.util.OwOFactory
 import io.github.reactivecircus.cache4k.Cache
 import java.io.BufferedReader
 import java.io.FileReader
@@ -42,6 +44,7 @@ import kotlin.time.Duration.Companion.minutes
 class Somnus(private val config: Config, private val serverInfoProvider: ServerInfoProvider?) {
     private val activityDetectors: MutableList<ActivityDetector> = mutableListOf()
     private val panels: Cache<Snowflake, InteractivePanel> = Cache.Builder().expireAfterWrite(5.minutes).build()
+    private val owofier = OwOFactory.INSTANCE.create(Options.defaults().apply { addSuffix(", meow!") })
     val soundboardManager = SoundboardManager()
 
     suspend fun start() {
@@ -89,7 +92,16 @@ class Somnus(private val config: Config, private val serverInfoProvider: ServerI
             if (author != null && allowOnServer(message)) {
                 val command = message.content.trim()
                 val tokens = command.split(Regex("\\s+?"))
-                handleWittyResponses(message, author, command, tokens)
+
+                val (showWittyMessages, showKittyMessages) = withPreferencesData(author.id) {
+                    showWittyMessages to showKittyMessages
+                }
+                if (showWittyMessages) {
+                    handleWittyResponses(message, author, command, tokens)
+                }
+                if (showKittyMessages) {
+                    handleKittyResponses(message)
+                }
 
                 if (!author.isBot) {
                     update(message.channel, author)
@@ -156,8 +168,6 @@ class Somnus(private val config: Config, private val serverInfoProvider: ServerI
     }
 
     private suspend fun handleWittyResponses(message: Message, author: User, command: String, tokens: List<String>) {
-        if (withPreferencesData(author.id) { !showWittyMessages }) return
-
         val strippedCommand = command
             .replace(Constants.MENTION_FILTER, "")
             .replace(Constants.CHANNEL_FILTER, "")
@@ -188,9 +198,15 @@ class Somnus(private val config: Config, private val serverInfoProvider: ServerI
         }
     }
 
+    private suspend fun handleKittyResponses(message: Message) {
+        message.respond(this uwu message.content)
+    }
+
     fun registerInteractivePanel(id: Snowflake, panel: InteractivePanel) {
         panels.put(id, panel)
     }
+
+    infix fun uwu(s: String): String = owofier.translate(s)
 
     /**
      * Searches for a bot token in order from the following sources:

@@ -1,12 +1,13 @@
 package ai.arcblroth.somnus3.commands.impl
 
 import ai.arcblroth.somnus3.Config
+import ai.arcblroth.somnus3.Somnus
 import ai.arcblroth.somnus3.commands.BooleanOption
 import ai.arcblroth.somnus3.commands.CommandRegistry
 import ai.arcblroth.somnus3.data.withPreferencesData
 import dev.kord.core.Kord
 
-fun CommandRegistry.registerMetaCommands(kord: Kord, config: Config) {
+fun CommandRegistry.registerMetaCommands(kord: Kord, somnus: Somnus, config: Config) {
     slash("somnus", "help") {
         description = "son of night, brother of death"
         execute = { _, _, _ ->
@@ -67,6 +68,25 @@ fun CommandRegistry.registerMetaCommands(kord: Kord, config: Config) {
                 showWittyMessages = options["value"] as Boolean? ?: !showWittyMessages
                 respond {
                     content = "Witty messages have been turned **${(if (showWittyMessages) "on" else "off")}**."
+                }
+            }
+        }
+    }
+
+    slash("showkittymessages") {
+        description = "Toggle whether or not to cat. Off by default."
+        options = listOf(
+            BooleanOption(
+                name = "value",
+                description = "Send kitty responses?",
+                optional = true,
+            )
+        )
+        execute = { author, _, options ->
+            withPreferencesData(author.id) {
+                showWittyMessages = options["value"] as Boolean? ?: !showWittyMessages
+                respond {
+                    content = somnus uwu "Kitty messages have been turned **${(if (showWittyMessages) "on" else "off")}**."
                 }
             }
         }

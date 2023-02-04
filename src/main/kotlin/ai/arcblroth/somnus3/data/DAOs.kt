@@ -35,6 +35,7 @@ class PreferencesData(id: EntityID<Snowflake>) : SnowflakeEntity(id) {
 
     var showDeathMessages by PreferencesDataTable.showDeathMessages
     var showWittyMessages by PreferencesDataTable.showWittyMessages
+    var showKittyMessages by PreferencesDataTable.showKittyMessages
 }
 
 class CounterData(id: EntityID<Int>) : IntEntity(id) {

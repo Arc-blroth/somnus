@@ -26,7 +26,7 @@ suspend fun registerCommandCallbacks(
     serverInfoProvider: ServerInfoProvider?
 ): Commands {
     val registry = CommandRegistry.registerCommands(kord, somnus, config) {
-        registerMetaCommands(kord, config)
+        registerMetaCommands(kord, somnus, config)
         registerGameCommands(kord, config)
         registerGameV3Commands(kord, config)
         registerAdminCommands(kord, config)
