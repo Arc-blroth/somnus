@@ -91,16 +91,22 @@ class Somnus(private val config: Config, private val serverInfoProvider: ServerI
             val author = message.author
             if (author != null && allowOnServer(message)) {
                 val command = message.content.trim()
+                val strippedCommand = command
+                    .replace(Constants.MENTION_FILTER, "")
+                    .replace(Constants.CHANNEL_FILTER, "")
+                    .replace(Constants.EMOJI_FILTER, "")
+                    .replace(Constants.TIMESTAMP_FILTER, "")
                 val tokens = command.split(Regex("\\s+?"))
 
                 val (showWittyMessages, showKittyMessages) = withPreferencesData(author.id) {
                     showWittyMessages to showKittyMessages
                 }
+
                 if (showWittyMessages) {
-                    handleWittyResponses(message, author, command, tokens)
+                    handleWittyResponses(message, author, strippedCommand, tokens)
                 }
                 if (showKittyMessages) {
-                    handleKittyResponses(message)
+                    handleKittyResponses(message, strippedCommand)
                 }
 
                 if (!author.isBot) {
@@ -167,13 +173,7 @@ class Somnus(private val config: Config, private val serverInfoProvider: ServerI
         }
     }
 
-    private suspend fun handleWittyResponses(message: Message, author: User, command: String, tokens: List<String>) {
-        val strippedCommand = command
-            .replace(Constants.MENTION_FILTER, "")
-            .replace(Constants.CHANNEL_FILTER, "")
-            .replace(Constants.EMOJI_FILTER, "")
-            .replace(Constants.TIMESTAMP_FILTER, "")
-
+    private suspend fun handleWittyResponses(message: Message, author: User, strippedCommand: String, tokens: List<String>) {
         // nice
         if (strippedCommand.contains("69") || strippedCommand.contains("420")) {
             message.respond("<@!${author.id}> nice")
@@ -198,8 +198,8 @@ class Somnus(private val config: Config, private val serverInfoProvider: ServerI
         }
     }
 
-    private suspend fun handleKittyResponses(message: Message) {
-        message.respond(this uwu message.content)
+    private suspend fun handleKittyResponses(message: Message, strippedCommand: String) {
+        message.respond(this uwu strippedCommand)
     }
 
     fun registerInteractivePanel(id: Snowflake, panel: InteractivePanel) {
