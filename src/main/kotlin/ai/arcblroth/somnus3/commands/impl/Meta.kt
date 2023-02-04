@@ -84,9 +84,9 @@ fun CommandRegistry.registerMetaCommands(kord: Kord, somnus: Somnus, config: Con
         )
         execute = { author, _, options ->
             withPreferencesData(author.id) {
-                showWittyMessages = options["value"] as Boolean? ?: !showWittyMessages
+                showKittyMessages = options["value"] as Boolean? ?: !showKittyMessages
                 respond {
-                    content = somnus uwu "Kitty messages have been turned **${(if (showWittyMessages) "on" else "off")}**."
+                    content = somnus uwu "Kitty messages have been turned **${(if (showKittyMessages) "on" else "off")}**."
                 }
             }
         }
