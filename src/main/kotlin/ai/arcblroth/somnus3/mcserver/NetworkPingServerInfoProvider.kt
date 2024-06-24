@@ -9,6 +9,11 @@ import io.ktor.utils.io.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.JsonTransformingSerializer
+import kotlinx.serialization.serializer
 import java.io.ByteArrayOutputStream
 import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
@@ -104,6 +109,7 @@ class NetworkPingServerInfoProvider(val ip: String, val port: Int) : ServerInfoP
 private data class PingResponse(
     val version: Version?,
     val players: Players?,
+    @Serializable(with = DescriptionSerializer::class)
     val description: Description?,
     val favicon: String?,
 ) {
@@ -118,4 +124,9 @@ private data class PingResponse(
 
     @Serializable
     data class Description(val text: String?)
+}
+
+private object DescriptionSerializer : JsonTransformingSerializer<PingResponse.Description>(serializer<PingResponse.Description>()) {
+    override fun transformDeserialize(element: JsonElement) =
+        if (element is JsonPrimitive && element.isString) JsonObject(mapOf("text" to element)) else element
 }
