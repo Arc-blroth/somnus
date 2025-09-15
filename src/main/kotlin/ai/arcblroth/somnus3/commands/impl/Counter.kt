@@ -54,7 +54,7 @@ fun CommandRegistry.registerCounterCommands(
                     onParseFailure = { content = "Invalid counter specified!" },
                 ),
             )
-        execute = { _, _, options ->
+        execute = { _, _, _, options ->
             val counterName = options["name"] as String
             transaction {
                 val counter = CounterData.find { CounterDataTable.name eq counterName }.singleOrNull()
@@ -98,7 +98,7 @@ private fun CommandRegistry.slashModifyCounter(
                     onParseFailure = { content = "`$it` is not a number!" },
                 ),
             )
-        execute = { _, _, options ->
+        execute = { _, _, _, options ->
             val counterName = options["name"] as String
             val value = (options["value"] as Long? ?: defaultValue)!!
             if (counterName.length > 1900) {

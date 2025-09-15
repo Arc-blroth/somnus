@@ -32,7 +32,7 @@ fun CommandRegistry.registerGameV3Commands(
                     },
                 ),
             )
-        execute = { author, _, options ->
+        execute = { author, _, _, options ->
             withPlayerData(author.id) {
                 val purchaseType = options["purchase"] as String?
                 if (purchaseType == null) {
@@ -101,7 +101,7 @@ fun CommandRegistry.registerGameV3Commands(
 
     slash("wet", "pee") {
         description = "?"
-        execute = { author, _, _ ->
+        execute = { author, _, _, _ ->
             withPlayerData(author.id) {
                 if (Math.random() < 0.5) {
                     furryPoints += 1.0
@@ -137,7 +137,7 @@ fun CommandRegistry.registerGameV3Commands(
                     onParseFailure = ::wrongUserMessage,
                 ),
             )
-        execute = { author, _, options ->
+        execute = { author, _, _, options ->
             withOptionalUserArg(kord, options["player"] as Snowflake?, author) { user ->
                 withAngelData(user.id) {
                     respond {
@@ -153,7 +153,7 @@ fun CommandRegistry.registerGameV3Commands(
 
     slash("summonrates") {
         description = "Rarity information for summoning angels."
-        execute = { _, _, _ ->
+        execute = { _, _, _, _ ->
             respond {
                 somnusEmbed {
                     AngelType.values().forEach {
@@ -173,7 +173,7 @@ fun CommandRegistry.registerGameV3Commands(
 
     slash("summon") {
         description = "Summon a new sleep angel. Costs $${Constants.SUMMON_MONEY_COST} and ${Constants.SUMMON_SWAG_COST} swag points."
-        execute = { author, _, _ ->
+        execute = { author, _, _, _ ->
             withPlayerData(author.id) {
                 withAngelData(author.id) {
                     if (moneyPoints < Constants.SUMMON_MONEY_COST) {

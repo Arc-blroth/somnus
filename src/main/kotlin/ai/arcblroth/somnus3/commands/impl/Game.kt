@@ -32,7 +32,7 @@ fun CommandRegistry.registerGameCommands(
                     onParseFailure = ::wrongUserMessage,
                 ),
             )
-        execute = { author, _, options ->
+        execute = { author, _, _, options ->
             withOptionalUserArg(kord, options["player"] as Snowflake?, author) { user ->
                 withPlayerData(user.id) {
                     withAngelData(user.id) {
@@ -60,7 +60,7 @@ fun CommandRegistry.registerGameCommands(
 
     slash("dig", "mine") {
         description = "Spend some sleep points working at Ryancoal Industries and earn minimum wage."
-        execute = { author, _, _ ->
+        execute = { author, _, _, _ ->
             withPlayerData(author.id) {
                 val random = Math.random()
                 val coalFound = floor(random * Constants.DIG_REWARD_MULT + 1).toInt()
@@ -85,7 +85,7 @@ fun CommandRegistry.registerGameCommands(
 
     slash("ramen") {
         description = "Replenish HP by eating ramen. Ramen costs \$18 per cup."
-        execute = { author, _, _ ->
+        execute = { author, _, _, _ ->
             withPlayerData(author.id) {
                 if (moneyPoints < Constants.RAMEN_COST) {
                     respond {
@@ -113,7 +113,7 @@ fun CommandRegistry.registerGameCommands(
 
     slash("msg") {
         description = "Forget the noodles and consume some pure MSG™. Can both heal and hurt you. Costs \$45 per pack."
-        execute = { author, _, _ ->
+        execute = { author, _, _, _ ->
             withPlayerData(author.id) {
                 if (moneyPoints < Constants.MSG_COST) {
                     respond {
@@ -144,7 +144,7 @@ fun CommandRegistry.registerGameCommands(
 
     slash("learn") {
         description = "Spend 10 sleep points and read some of those textbooks that you've been neglecting."
-        execute = { author, _, _ ->
+        execute = { author, _, _, _ ->
             withPlayerData(author.id) {
                 val random = Math.random()
                 val maxKp =
@@ -173,7 +173,7 @@ fun CommandRegistry.registerGameCommands(
 
     slash("game") {
         description = "Take a break from learning and mining and GAME! Replenishes HP but might kill a few brain cells..."
-        execute = { author, _, _ ->
+        execute = { author, _, _, _ ->
             withPlayerData(author.id) {
                 val random = Math.random()
                 val baseReward =
@@ -210,7 +210,7 @@ fun CommandRegistry.registerGameCommands(
 
     slash("worship", "simp") {
         description = "This is definitely not a cult."
-        execute = { author, guild, _ ->
+        execute = { author, guild, _, _ ->
             withPlayerData(author.id) {
                 val random = Math.random()
                 val baseReward =

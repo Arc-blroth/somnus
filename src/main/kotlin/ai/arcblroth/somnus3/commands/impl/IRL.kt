@@ -21,7 +21,7 @@ fun CommandRegistry.registerIRLCommands(
 ) {
     slash("server") {
         description = "Check if the Minecraft server is running."
-        execute = { _, _, _ ->
+        execute = { _, _, _, _ ->
             if (serverInfoProvider != null) {
                 try {
                     val info = serverInfoProvider.get()
@@ -76,7 +76,7 @@ fun CommandRegistry.registerIRLCommands(
 
     slash("fire") {
         description = "Query what fires are burning in California right now, sorted by most recent."
-        execute = { _, _, _ ->
+        execute = { _, _, _, _ ->
             val response = request("https://www.fire.ca.gov/umbraco/api/IncidentApi/List?inactive=false")
             val data = Constants.lenientJson.decodeFromString<List<CalfireFireData>>(response.bodyAsText())
             if (data.isEmpty()) {

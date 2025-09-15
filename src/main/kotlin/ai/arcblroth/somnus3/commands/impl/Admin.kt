@@ -10,15 +10,16 @@ import dev.kord.core.Kord
 import dev.kord.core.behavior.ban
 import dev.kord.core.behavior.channel.edit
 import dev.kord.core.entity.Member
+import dev.kord.core.entity.Message
 import dev.kord.core.entity.ReactionEmoji
 import dev.kord.core.entity.channel.*
+import dev.kord.core.exception.EntityNotFoundException
 import dev.kord.core.supplier.EntitySupplyStrategy
 import dev.kord.rest.request.RestRequestException
 import gr.james.sampling.LiLSampling
 import kotlinx.coroutines.flow.filter
 import java.io.StringReader
 import java.util.*
-import kotlin.concurrent.atomics.AtomicLong
 import kotlin.time.Duration
 
 fun CommandRegistry.registerAdminCommands(
@@ -36,7 +37,7 @@ fun CommandRegistry.registerAdminCommands(
                     onParseFailure = ::wrongUserMessage,
                 ),
             )
-        execute = { author, _, options ->
+        execute = { author, _, _, options ->
             withOptionalUserArg(kord, options["victim"] as Snowflake?, author) { victim ->
                 // check permissions
                 if (author.id == victim.id || victim.id in config.noSudoRequiredKillVictims || author.id in config.sudoers) {
@@ -63,7 +64,7 @@ fun CommandRegistry.registerAdminCommands(
                     onParseFailure = ::wrongUserMessage,
                 ),
             )
-        execute = { author, _, options ->
+        execute = { author, _, _, options ->
             withOptionalUserArg(kord, options["victim"] as Snowflake?, author) { victim ->
                 withPlayerData(victim.id) {
                     respond {
@@ -84,7 +85,7 @@ fun CommandRegistry.registerAdminCommands(
                     optional = true,
                 ),
             )
-        execute = execute@{ author, guild, options ->
+        execute = execute@{ author, guild, _, options ->
             if (guild == null) {
                 respond {
                     somnusEmbed {
@@ -188,6 +189,109 @@ fun CommandRegistry.registerAdminCommands(
         }
     }
 
+    slash("purge") {
+        description = "Deletes all messages between the two given messages, inclusive."
+        options =
+            listOf(
+                StringOption(
+                    name = "first",
+                    description = "First message to delete, inclusive.",
+                    onParseFailure = {},
+                ),
+                StringOption(
+                    name = "last",
+                    description = "Last message to delete, inclusive.",
+                    onParseFailure = {},
+                ),
+            )
+        execute = execute@{ author, guild, channel, options ->
+            if (guild == null || author !is Member || author.permissions == null || channel !is GuildMessageChannel) {
+                acknowledge(
+                    ReactionEmoji.Unicode("❌"),
+                    "${prefix}purge can only be used in a guild.",
+                )
+                return@execute
+            }
+
+            val executor = guild.getMember(author.id)
+            val self = guild.getMember(kord.selfId)
+
+            if (Permission.ManageMessages !in author.permissions!!) {
+                respond {
+                    sudoFailMessage(executor)
+                }
+                return@execute
+            }
+            if (Permission.ManageMessages !in self.getPermissions()) {
+                acknowledge(
+                    ReactionEmoji.Unicode("❌"),
+                    "Somnus requires the `Manage Messages` permission to execute a ${prefix}purge.",
+                )
+                return@execute
+            }
+
+            val getMessage: suspend (String) -> Message? = { option ->
+                val id = Snowflake(options[option] as String)
+                try {
+                    channel.getMessage(id)
+                } catch (_: NumberFormatException) {
+                    acknowledge(
+                        ReactionEmoji.Unicode("❌"),
+                        "`${options[option]}` is not a message id!",
+                    )
+                    null
+                } catch (_: EntityNotFoundException) {
+                    acknowledge(
+                        ReactionEmoji.Unicode("❌"),
+                        "A message with id `$id` was not found in this channel.",
+                    )
+                    null
+                }
+            }
+
+            val firstMessage = getMessage("first") ?: return@execute
+            val secondMessage = getMessage("last") ?: return@execute
+
+            // If the two messages are the same, just do a normal delete here.
+            if (firstMessage.id == secondMessage.id) {
+                channel.deleteMessage(firstMessage.id)
+                acknowledge(
+                    ReactionEmoji.Unicode("✅"),
+                    "Purged 1 message (`${firstMessage.id}`)",
+                )
+                return@execute
+            }
+
+            var pivotMessageId = firstMessage.id
+            val messagesToDelete = mutableListOf(firstMessage.id)
+            var secondMessageFound = false
+            while (!secondMessageFound) {
+                channel.getMessagesAfter(pivotMessageId, 100).collect { message ->
+                    if (pivotMessageId < message.id) {
+                        pivotMessageId = message.id
+                    }
+                    if (message.id <= secondMessage.id) {
+                        messagesToDelete.add(message.id)
+                        if (message.id == secondMessage.id) {
+                            secondMessageFound = true
+                        }
+                    }
+                }
+            }
+            for (messagesToDeleteChunk in messagesToDelete.chunked(100)) {
+                if (messagesToDeleteChunk.size == 1) {
+                    channel.deleteMessage(messagesToDeleteChunk.first())
+                } else {
+                    channel.bulkDelete(messagesToDeleteChunk)
+                }
+            }
+            acknowledge(
+                ReactionEmoji.Unicode("✅"),
+                "Purged ${messagesToDelete.size} messages",
+            )
+        }
+    }
+
     text("massrename") {
         options =
             listOf(
@@ -196,7 +300,7 @@ fun CommandRegistry.registerAdminCommands(
                     description = "Map of channels to rename, in Java's `Properties` file format.",
                 ),
             )
-        execute = execute@{ author, guild, options ->
+        execute = execute@{ author, guild, _, options ->
             if (guild == null) {
                 respond {
                     somnusEmbed {
@@ -322,7 +426,7 @@ fun CommandRegistry.registerAdminCommands(
 
     var lastTaskkillTime: Long = 0
     text("taskkill", "yeet") {
-        execute = { author, _, _ ->
+        execute = { author, _, _, _ ->
             if (author.id in config.sudoers) {
                 if (System.currentTimeMillis() - lastTaskkillTime < 5000) {
                     (this as TextBasedSlashCommandExecutionBuilder).message.addReaction(ReactionEmoji.Unicode("✅"))

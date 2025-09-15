@@ -203,7 +203,7 @@ class CommandRegistry private constructor(
                             hasResponse = true
                             ackBuilder = Pair(emoji, message)
                         }
-                    }.(slashCommand.execute)(interaction.user, interaction.getGuildOrNull(), options)
+                    }.(slashCommand.execute)(interaction.user, interaction.getGuildOrNull(), interaction.getChannel(), options)
 
                     check(hasResponse) { "Command did not set any response" }
                     when {
@@ -286,7 +286,7 @@ class CommandRegistry private constructor(
                     hasResponse = true
                     ackEmoji = emoji
                 }
-            }.(slashCommand.execute)(author, message.getGuildOrNull(), options)
+            }.(slashCommand.execute)(author, message.getGuildOrNull(), message.getChannel(), options)
 
             check(hasResponse) { "Command did not set any response" }
             when {

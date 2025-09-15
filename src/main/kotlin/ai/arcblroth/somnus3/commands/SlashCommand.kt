@@ -5,9 +5,11 @@ import dev.kord.core.entity.Guild
 import dev.kord.core.entity.Message
 import dev.kord.core.entity.ReactionEmoji
 import dev.kord.core.entity.User
+import dev.kord.core.entity.channel.Channel
 import dev.kord.rest.builder.message.create.MessageCreateBuilder
 
-typealias SlashCommandAction = suspend SlashCommandExecutionBuilder.(author: User, guild: Guild?, options: Map<String, Any?>) -> Unit
+typealias SlashCommandAction =
+    suspend SlashCommandExecutionBuilder.(author: User, guild: Guild?, channel: Channel, options: Map<String, Any?>) -> Unit
 
 @SomnusCommandsDsl
 class SlashCommandBuilder {

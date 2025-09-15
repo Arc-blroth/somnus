@@ -14,7 +14,7 @@ fun CommandRegistry.registerMetaCommands(
 ) {
     slash("somnus", "help") {
         description = "son of night, brother of death"
-        execute = { _, _, _ ->
+        execute = { _, _, _, _ ->
             respond {
                 somnusEmbed {
                     title = "Somnus (Kotlin)"
@@ -50,7 +50,7 @@ fun CommandRegistry.registerMetaCommands(
                     optional = true,
                 ),
             )
-        execute = { author, _, options ->
+        execute = { author, _, _, options ->
             withPreferencesData(author.id) {
                 showDeathMessages = options["value"] as Boolean? ?: !showDeathMessages
                 respond {
@@ -70,7 +70,7 @@ fun CommandRegistry.registerMetaCommands(
                     optional = true,
                 ),
             )
-        execute = { author, _, options ->
+        execute = { author, _, _, options ->
             withPreferencesData(author.id) {
                 showWittyMessages = options["value"] as Boolean? ?: !showWittyMessages
                 respond {
@@ -90,7 +90,7 @@ fun CommandRegistry.registerMetaCommands(
                     optional = true,
                 ),
             )
-        execute = { author, _, options ->
+        execute = { author, _, _, options ->
             withPreferencesData(author.id) {
                 showKittyMessages = options["value"] as Boolean? ?: !showKittyMessages
                 respond {
