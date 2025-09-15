@@ -9,7 +9,6 @@ sqlite-jdbc = "3.50.3.0"
 exposed = "1.0.0-rc-1"
 cache4k = "0.14.0"
 reservoir-sampling = "0.28"
-lavaplayer = "1.3.77"
 owo = "2.1.0"
 
 [plugins]
@@ -28,5 +27,4 @@ exposed-dao = { module = "org.jetbrains.exposed:exposed-dao", version.ref = "exp
 exposed-jdbc = { module = "org.jetbrains.exposed:exposed-jdbc", version.ref = "exposed" }
 cache4k = { module = "io.github.reactivecircus.cache4k:cache4k", version.ref = "cache4k" }
 reservoir-sampling = { module = "gr.james:random-sampling", version.ref = "reservoir-sampling" }
-lavaplayer = { module = "com.sedmelluq:lavaplayer", version.ref = "lavaplayer" }
 owo = { module = "io.github.arc-blroth:MaowImpl-owo", version.ref = "owo" }
