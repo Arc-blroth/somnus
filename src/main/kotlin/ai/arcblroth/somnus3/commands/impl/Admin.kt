@@ -265,6 +265,7 @@ fun CommandRegistry.registerAdminCommands(
             var pivotMessageId = firstMessage.id
             val messagesToDelete = mutableListOf(firstMessage.id)
             var secondMessageFound = false
+            var secondMessageGone = false
             while (!secondMessageFound) {
                 channel.getMessagesAfter(pivotMessageId, 100).collect { message ->
                     if (pivotMessageId < message.id) {
@@ -275,7 +276,16 @@ fun CommandRegistry.registerAdminCommands(
                         if (message.id == secondMessage.id) {
                             secondMessageFound = true
                         }
+                    } else {
+                        secondMessageGone = true
                     }
+                }
+                if (secondMessageGone) {
+                    acknowledge(
+                        ReactionEmoji.Unicode("❌"),
+                        "Could not find last message `${secondMessage.id}`, bailing!",
+                    )
+                    return@execute
                 }
             }
             for (messagesToDeleteChunk in messagesToDelete.chunked(100)) {
