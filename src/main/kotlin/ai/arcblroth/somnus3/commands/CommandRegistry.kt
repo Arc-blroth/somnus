@@ -21,7 +21,11 @@ import kotlinx.coroutines.flow.toSet
 import org.slf4j.LoggerFactory
 
 @SomnusCommandsDsl
-class CommandRegistry private constructor(private val kord: Kord, private val somnus: Somnus, private val config: Config) {
+class CommandRegistry private constructor(
+    private val kord: Kord,
+    private val somnus: Somnus,
+    private val config: Config,
+) {
     private val logger = LoggerFactory.getLogger("CommandRegistry")
     private var finished = false
     private val slashCommands: MutableMap<String, SlashCommand> = mutableMapOf()
@@ -35,7 +39,11 @@ class CommandRegistry private constructor(private val kord: Kord, private val so
      * If `user` is set to true and the command takes a single user argument,
      * it will additionally be registered as a user command for consistency.
      */
-    fun slash(name: String, user: Boolean = true, builder: SlashCommandBuilder.() -> Unit) {
+    fun slash(
+        name: String,
+        user: Boolean = true,
+        builder: SlashCommandBuilder.() -> Unit,
+    ) {
         check(!finished)
 
         val builderObj = SlashCommandBuilder().also(builder)
@@ -60,7 +68,12 @@ class CommandRegistry private constructor(private val kord: Kord, private val so
     /**
      * Registers a new slash command with one or more aliases.
      */
-    fun slash(name: String, vararg aliases: String, user: Boolean = true, builder: SlashCommandBuilder.() -> Unit) {
+    fun slash(
+        name: String,
+        vararg aliases: String,
+        user: Boolean = true,
+        builder: SlashCommandBuilder.() -> Unit,
+    ) {
         slash(name, user, builder)
         val command = slashCommands[name]!!
         aliases.forEach {
@@ -71,7 +84,11 @@ class CommandRegistry private constructor(private val kord: Kord, private val so
     /**
      * Registers a new text-only command with one or more aliases.
      */
-    fun text(name: String, vararg aliases: String, builder: SlashCommandBuilder.() -> Unit) {
+    fun text(
+        name: String,
+        vararg aliases: String,
+        builder: SlashCommandBuilder.() -> Unit,
+    ) {
         val builderObj = SlashCommandBuilder().also(builder)
         val exec = requireNotNull(builderObj.execute) { "Slash command must actually do something!" }
         val numRequiredOptions = checkOptionalArguments(builderObj.options)
@@ -106,29 +123,36 @@ class CommandRegistry private constructor(private val kord: Kord, private val so
         finished = true
 
         // update commands
-        val servers = EntitySupplyStrategy.rest.supply(kord).guilds.toSet().filter { it.id in config.allowedServers }
+        val servers =
+            EntitySupplyStrategy.rest
+                .supply(kord)
+                .guilds
+                .toSet()
+                .filter { it.id in config.allowedServers }
         for (server in servers) {
             try {
                 // register new commands
-                kord.createGuildApplicationCommands(server.id) {
-                    for (command in slashCommands.values) {
-                        if (command.isAlias && !command.name.matches(INPUT_COMMAND_NAME_REGEX)) {
-                            // skip aliases that don't conform to the slash command name regex
-                            // this is used for the !++ and !-- counter commands
-                            continue
+                kord
+                    .createGuildApplicationCommands(server.id) {
+                        for (command in slashCommands.values) {
+                            if (command.isAlias && !command.name.matches(INPUT_COMMAND_NAME_REGEX)) {
+                                // skip aliases that don't conform to the slash command name regex
+                                // this is used for the !++ and !-- counter commands
+                                continue
+                            }
+                            input(command.name, command.description) {
+                                options =
+                                    command.options
+                                        .map(Option<*>::toOptionsBuilder)
+                                        .toMutableList()
+                            }
                         }
-                        input(command.name, command.description) {
-                            options = command.options
-                                .map(Option<*>::toOptionsBuilder)
-                                .toMutableList()
+                        for (command in userCommands.values) {
+                            user(command.name)
                         }
+                    }.collect {
+                        registeredCommands[it.id] = slashCommands[it.name]!!
                     }
-                    for (command in userCommands.values) {
-                        user(command.name)
-                    }
-                }.collect {
-                    registeredCommands[it.id] = slashCommands[it.name]!!
-                }
             } catch (e: Exception) {
                 logger.warn("Couldn't register commands for server `${server.name}` (${server.id})")
             }
@@ -136,89 +160,103 @@ class CommandRegistry private constructor(private val kord: Kord, private val so
     }
 
     // application command callback, invoked from `Somnus`
-    internal suspend fun handleSlashCommand(event: GuildApplicationCommandInteractionCreateEvent) = with(event) {
-        if (interaction.data.guildId.value in config.allowedServers) {
-            val slashCommand = registeredCommands[interaction.invokedCommandId]
-            if (slashCommand != null) {
-                val options = when (interaction) {
-                    is GuildUserCommandInteraction -> {
-                        mapOf(slashCommand.options[0].name to (interaction as GuildUserCommandInteraction).targetId)
-                    }
-                    else -> {
-                        interaction.data.data.options.value?.associate {
-                            it.name to it.value.value?.value
-                        }.orEmpty()
-                    }
-                }
+    internal suspend fun handleSlashCommand(event: GuildApplicationCommandInteractionCreateEvent) =
+        with(event) {
+            if (interaction.data.guildId.value in config.allowedServers) {
+                val slashCommand = registeredCommands[interaction.invokedCommandId]
+                if (slashCommand != null) {
+                    val options =
+                        when (interaction) {
+                            is GuildUserCommandInteraction -> {
+                                mapOf(slashCommand.options[0].name to (interaction as GuildUserCommandInteraction).targetId)
+                            }
+                            else -> {
+                                interaction.data.data.options.value
+                                    ?.associate {
+                                        it.name to it.value.value?.value
+                                    }.orEmpty()
+                            }
+                        }
 
-                var hasResponse = false
-                var messageBuilder: (MessageCreateBuilder.() -> Unit)? = null
-                var panelBuilder: (InteractivePanelBuilder.() -> Unit)? = null
-                var ackBuilder: Pair<ReactionEmoji, String>? = null
-                object : SlashCommandExecutionBuilder {
-                    override fun respond(builder: MessageCreateBuilder.() -> Unit) {
-                        check(!hasResponse)
-                        hasResponse = true
-                        messageBuilder = builder
-                    }
-                    override fun respondPanel(builder: InteractivePanelBuilder.() -> Unit) {
-                        check(!hasResponse)
-                        hasResponse = true
-                        panelBuilder = builder
-                    }
-                    override fun acknowledge(emoji: ReactionEmoji, message: String) {
-                        check(!hasResponse)
-                        hasResponse = true
-                        ackBuilder = Pair(emoji, message)
-                    }
-                }.(slashCommand.execute)(interaction.user, interaction.getGuildOrNull(), options)
+                    var hasResponse = false
+                    var messageBuilder: (MessageCreateBuilder.() -> Unit)? = null
+                    var panelBuilder: (InteractivePanelBuilder.() -> Unit)? = null
+                    var ackBuilder: Pair<ReactionEmoji, String>? = null
+                    object : SlashCommandExecutionBuilder {
+                        override fun respond(builder: MessageCreateBuilder.() -> Unit) {
+                            check(!hasResponse)
+                            hasResponse = true
+                            messageBuilder = builder
+                        }
 
-                check(hasResponse) { "Command did not set any response" }
-                when {
-                    messageBuilder != null -> interaction.respondPublic(messageBuilder!!)
-                    panelBuilder != null -> {
-                        val panel: InteractivePanel
-                        val result = interaction.respondPublic { panel = respondPanel(panelBuilder!!) }
-                        val message = kord.with(EntitySupplyStrategy.rest).getOriginalInteraction(result.applicationId, result.token)
-                        somnus.registerInteractivePanel(message.id, panel)
-                    }
-                    else -> {
-                        val (emoji, message) = ackBuilder!!
-                        interaction.respondEphemeral {
-                            content = "${emoji.mention} $message"
+                        override fun respondPanel(builder: InteractivePanelBuilder.() -> Unit) {
+                            check(!hasResponse)
+                            hasResponse = true
+                            panelBuilder = builder
+                        }
+
+                        override fun acknowledge(
+                            emoji: ReactionEmoji,
+                            message: String,
+                        ) {
+                            check(!hasResponse)
+                            hasResponse = true
+                            ackBuilder = Pair(emoji, message)
+                        }
+                    }.(slashCommand.execute)(interaction.user, interaction.getGuildOrNull(), options)
+
+                    check(hasResponse) { "Command did not set any response" }
+                    when {
+                        messageBuilder != null -> interaction.respondPublic(messageBuilder!!)
+                        panelBuilder != null -> {
+                            val panel: InteractivePanel
+                            val result = interaction.respondPublic { panel = respondPanel(panelBuilder!!) }
+                            val message = kord.with(EntitySupplyStrategy.rest).getOriginalInteraction(result.applicationId, result.token)
+                            somnus.registerInteractivePanel(message.id, panel)
+                        }
+                        else -> {
+                            val (emoji, message) = ackBuilder!!
+                            interaction.respondEphemeral {
+                                content = "${emoji.mention} $message"
+                            }
                         }
                     }
                 }
             }
         }
-    }
 
     // invoked from `Somnus` so that we don't tokenize twice
     // assumes that the message has been sent from an allowed server
-    internal suspend fun handleMessage(message: Message, author: User, commandPrefix: String, tokens: List<String>) {
+    internal suspend fun handleMessage(
+        message: Message,
+        author: User,
+        commandPrefix: String,
+        tokens: List<String>,
+    ) {
         val slashCommand = slashCommands[commandPrefix] ?: textOnlyCommands[commandPrefix] ?: return
         if (tokens.size - 1 >= slashCommand.numRequiredOptions) {
-            val options = slashCommand.options.withIndex().associate {
-                if (it.index + 1 >= tokens.size) {
-                    return@associate it.value.name to null
-                }
-                if (it.value is MessageContentOption) {
-                    return@associate it.value.name to message.content.trim().substring(commandPrefix.length + 1)
-                }
-                val token = tokens[it.index + 1]
-                val maybeParsed = it.value.parse(token)
-                if (maybeParsed != null) {
-                    return@associate it.value.name to maybeParsed
-                } else {
-                    val onParseFailure = it.value.onParseFailure
-                    if (onParseFailure != null) {
-                        message.respond {
-                            onParseFailure(token)
-                        }
+            val options =
+                slashCommand.options.withIndex().associate {
+                    if (it.index + 1 >= tokens.size) {
+                        return@associate it.value.name to null
                     }
-                    return@handleMessage
+                    if (it.value is MessageContentOption) {
+                        return@associate it.value.name to message.content.trim().substring(commandPrefix.length + 1)
+                    }
+                    val token = tokens[it.index + 1]
+                    val maybeParsed = it.value.parse(token)
+                    if (maybeParsed != null) {
+                        return@associate it.value.name to maybeParsed
+                    } else {
+                        val onParseFailure = it.value.onParseFailure
+                        if (onParseFailure != null) {
+                            message.respond {
+                                onParseFailure(token)
+                            }
+                        }
+                        return@handleMessage
+                    }
                 }
-            }
 
             var hasResponse = false
             var messageBuilder: (MessageCreateBuilder.() -> Unit)? = null
@@ -233,12 +271,17 @@ class CommandRegistry private constructor(private val kord: Kord, private val so
                     hasResponse = true
                     messageBuilder = builder
                 }
+
                 override fun respondPanel(builder: InteractivePanelBuilder.() -> Unit) {
                     check(!hasResponse)
                     hasResponse = true
                     panelBuilder = builder
                 }
-                override fun acknowledge(emoji: ReactionEmoji, message: String) {
+
+                override fun acknowledge(
+                    emoji: ReactionEmoji,
+                    message: String,
+                ) {
                     check(!hasResponse)
                     hasResponse = true
                     ackEmoji = emoji
@@ -263,7 +306,11 @@ class CommandRegistry private constructor(private val kord: Kord, private val so
     companion object {
         private val INPUT_COMMAND_NAME_REGEX = Regex("^[-_\\p{L}\\p{N}\\p{sc=Deva}\\p{sc=Thai}]{1,32}\$")
 
-        suspend fun registerCommands(kord: Kord, somnus: Somnus, config: Config, builder: CommandRegistry.() -> Unit) =
-            CommandRegistry(kord, somnus, config).also(builder).apply { finish() }
+        suspend fun registerCommands(
+            kord: Kord,
+            somnus: Somnus,
+            config: Config,
+            builder: CommandRegistry.() -> Unit,
+        ) = CommandRegistry(kord, somnus, config).also(builder).apply { finish() }
     }
 }

@@ -8,9 +8,13 @@ import ai.arcblroth.somnus3.data.CounterData
 import ai.arcblroth.somnus3.data.CounterDataTable
 import ai.arcblroth.somnus3.data.withCounterData
 import dev.kord.core.Kord
-import org.jetbrains.exposed.sql.transactions.transaction
+import org.jetbrains.exposed.v1.core.eq
+import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 
-fun CommandRegistry.registerCounterCommands(kord: Kord, config: Config) {
+fun CommandRegistry.registerCounterCommands(
+    kord: Kord,
+    config: Config,
+) {
     slashModifyCounter(
         name = "add",
         aliases = arrayOf("++"),
@@ -18,7 +22,7 @@ fun CommandRegistry.registerCounterCommands(kord: Kord, config: Config) {
         defaultValue = 1L,
         modifier = { a, b -> a + b },
         actionInfinitive = "increment",
-        actionPastParticiple = "incremented"
+        actionPastParticiple = "incremented",
     )
 
     slashModifyCounter(
@@ -28,7 +32,7 @@ fun CommandRegistry.registerCounterCommands(kord: Kord, config: Config) {
         defaultValue = 1L,
         modifier = { a, b -> a - b },
         actionInfinitive = "decrement",
-        actionPastParticiple = "decremented"
+        actionPastParticiple = "decremented",
     )
 
     slashModifyCounter(
@@ -37,18 +41,19 @@ fun CommandRegistry.registerCounterCommands(kord: Kord, config: Config) {
         defaultValue = null,
         modifier = { _, b -> b },
         actionInfinitive = "set",
-        actionPastParticiple = "set"
+        actionPastParticiple = "set",
     )
 
     slash("remove") {
         description = "Deletes a counter."
-        options = listOf(
-            StringOption(
-                name = "name",
-                description = "Name of the counter to yeet forever!",
-                onParseFailure = { content = "Invalid counter specified!" }
+        options =
+            listOf(
+                StringOption(
+                    name = "name",
+                    description = "Name of the counter to yeet forever!",
+                    onParseFailure = { content = "Invalid counter specified!" },
+                ),
             )
-        )
         execute = { _, _, options ->
             val counterName = options["name"] as String
             transaction {
@@ -79,19 +84,20 @@ private fun CommandRegistry.slashModifyCounter(
 ) {
     slash(name, *aliases) {
         this.description = description
-        options = listOf(
-            StringOption(
-                name = "name",
-                description = "Name of the counter to $actionInfinitive.",
-                onParseFailure = { content = "Invalid counter specified!" }
-            ),
-            LongOption(
-                name = "value",
-                description = "Value to $actionInfinitive.",
-                optional = defaultValue != null,
-                onParseFailure = { content = "`$it` is not a number!" }
+        options =
+            listOf(
+                StringOption(
+                    name = "name",
+                    description = "Name of the counter to $actionInfinitive.",
+                    onParseFailure = { content = "Invalid counter specified!" },
+                ),
+                LongOption(
+                    name = "value",
+                    description = "Value to $actionInfinitive.",
+                    optional = defaultValue != null,
+                    onParseFailure = { content = "`$it` is not a number!" },
+                ),
             )
-        )
         execute = { _, _, options ->
             val counterName = options["name"] as String
             val value = (options["value"] as Long? ?: defaultValue)!!

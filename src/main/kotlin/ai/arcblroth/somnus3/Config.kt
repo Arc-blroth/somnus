@@ -24,35 +24,25 @@ data class Config(
     // bot status
     val status: String = "Pokémon Mystery Dungeon",
     val statusType: ActivityType = ActivityType.Game,
-
     // ip address to use when pinging the minecraft server
     val mcServerIP: String? = null,
-
     // the list of all servers that Somnus will function in
     val allowedServers: List<Snowflake> = listOf(),
-
     // a map of server -> { name, url } for the !worship command
     val worshipConfig: Map<Snowflake, WorshipConfig> = mapOf(),
-
     // all users allowed to execute "sudo" commands
     val sudoers: List<Snowflake> = listOf(),
-
     // users that all users are allowed to !kill, regardless of sudo permissions
     val noSudoRequiredKillVictims: List<Snowflake> = listOf(),
-
     // activity detector options
     val enableActivityDetectors: Boolean = false,
     val leagueDetectorConfig: ActivityDetectorConfig? = null,
     val leagueAppIds: List<Snowflake> = listOf(Snowflake(356869127241072640L), Snowflake(401518684763586560L)),
     val intellijDetectorConfig: ActivityDetectorConfig? = null,
     val intellijAppIds: List<Snowflake> = listOf(Snowflake(547842383207858178L)),
-
     // feed options
     val enableFeeds: Boolean = false,
     val xkcdSubscribers: FeedConfig? = null,
-
-    // soundboard options
-    val soundboardSounds: Map<String, String> = emptyMap(),
 ) {
     @Serializable
     data class WorshipConfig(
@@ -76,14 +66,19 @@ data class PersistentConfig(
 )
 
 private val LOGGER = LoggerFactory.getLogger("Config")
-private val JSON = Json {
-    encodeDefaults = true
-    prettyPrint = true
-}
+private val JSON =
+    Json {
+        encodeDefaults = true
+        prettyPrint = true
+    }
 
 @OptIn(ExperimentalSerializationApi::class)
-private inline fun <reified T> readConfig(file: File, descriptor: String, defaultBuilder: () -> T): T {
-    return if (!file.exists()) {
+private inline fun <reified T> readConfig(
+    file: File,
+    descriptor: String,
+    defaultBuilder: () -> T,
+): T =
+    if (!file.exists()) {
         defaultBuilder()
     } else {
         try {
@@ -93,10 +88,13 @@ private inline fun <reified T> readConfig(file: File, descriptor: String, defaul
             defaultBuilder()
         }
     }
-}
 
 @OptIn(ExperimentalSerializationApi::class)
-private inline fun <reified T> writeConfig(file: File, descriptor: String, config: T) {
+private inline fun <reified T> writeConfig(
+    file: File,
+    descriptor: String,
+    config: T,
+) {
     try {
         file.outputStream().use { JSON.encodeToStream(config, it) }
     } catch (e: IOException) {

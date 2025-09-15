@@ -48,7 +48,7 @@ class ActivityDetector(
                     }
                 }
                 // either no time information or presence has changed
-                val newContent = messageTemplate.format(event.member.asMember().displayName)
+                val newContent = messageTemplate.format(event.member.asMember().effectiveName)
                 if (cachedEntry == null || cachedEntry.invalid) {
                     val message = logChannel.createMessage(newContent)
                     guildCache[memberId] = ActivityDetectorCacheEntry(startTime, message)
@@ -75,5 +75,5 @@ data class ActivityDetectorCacheEntry(
     var startTime: Instant?,
     val message: Message,
     var count: Long = 1,
-    var invalid: Boolean = false
+    var invalid: Boolean = false,
 )

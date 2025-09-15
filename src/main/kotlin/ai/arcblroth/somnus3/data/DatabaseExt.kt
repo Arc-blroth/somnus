@@ -1,29 +1,40 @@
 package ai.arcblroth.somnus3.data
 
 import dev.kord.common.entity.Snowflake
-import kotlinx.datetime.Clock
-import org.jetbrains.exposed.dao.Entity
-import org.jetbrains.exposed.dao.EntityClass
-import org.jetbrains.exposed.dao.id.IdTable
-import org.jetbrains.exposed.sql.Op
-import org.jetbrains.exposed.sql.SqlExpressionBuilder
-import org.jetbrains.exposed.sql.transactions.transaction
+import org.jetbrains.exposed.v1.core.Op
+import org.jetbrains.exposed.v1.core.dao.id.IdTable
+import org.jetbrains.exposed.v1.core.eq
+import org.jetbrains.exposed.v1.dao.Entity
+import org.jetbrains.exposed.v1.dao.EntityClass
+import org.jetbrains.exposed.v1.jdbc.transactions.transaction
+import kotlin.time.Clock
 
 /**
  * Opens a database transaction to `UPDATE` the given player's data.
  * If the player doesn't exist in the database, new data will be inserted.
  */
-fun <T> withPlayerData(player: Snowflake, block: PlayerData.() -> T) =
-    withData(PlayerData, PlayerDataTable, player, PlayerData::initPlayerData, block)
+fun <T> withPlayerData(
+    player: Snowflake,
+    block: PlayerData.() -> T,
+) = withData(PlayerData, PlayerDataTable, player, PlayerData::initPlayerData, block)
 
-fun <T> withAngelData(player: Snowflake, block: AngelData.() -> T) =
-    withData(AngelData, AngelDataTable, player, {}, block)
+fun <T> withAngelData(
+    player: Snowflake,
+    block: AngelData.() -> T,
+) = withData(AngelData, AngelDataTable, player, {}, block)
 
-fun <T> withPreferencesData(player: Snowflake, block: PreferencesData.() -> T) =
-    withData(PreferencesData, PreferencesDataTable, player, { showDeathMessages = true }, block)
+fun <T> withPreferencesData(
+    player: Snowflake,
+    block: PreferencesData.() -> T,
+) = withData(PreferencesData, PreferencesDataTable, player, { showDeathMessages = true }, block)
 
-fun <T> withCounterData(counterName: String, block: CounterData.() -> T) =
-    withData(CounterData, CounterDataTable, null, { name = counterName; counter = 0 }, block, { it.name eq counterName })
+fun <T> withCounterData(
+    counterName: String,
+    block: CounterData.() -> T,
+) = withData(CounterData, CounterDataTable, null, {
+    name = counterName
+    counter = 0
+}, block, { it.name eq counterName })
 
 /**
  * Opens a database transaction to `UPDATE` some data type.
@@ -35,7 +46,7 @@ private inline fun <reified Key, reified Table, reified DataType, reified DataTy
     key: Key?,
     crossinline defaultBuilder: DataType.() -> Unit,
     noinline block: DataType.() -> Output,
-    crossinline finder: SqlExpressionBuilder.(Table) -> Op<Boolean> = { it.id eq key },
+    crossinline finder: (Table) -> Op<Boolean> = { it.id eq key },
 ): Output
     where Key : Comparable<Key>,
           Table : IdTable<Key>,
@@ -44,7 +55,6 @@ private inline fun <reified Key, reified Table, reified DataType, reified DataTy
     transaction {
         val data = dataTypeClass.find { finder(table) }.singleOrNull()
 
-        @Suppress("IfThenToElvis")
         return@transaction if (data == null) {
             var output: Output? = null
             dataTypeClass.new(key) {

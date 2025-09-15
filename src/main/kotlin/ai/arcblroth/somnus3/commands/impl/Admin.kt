@@ -18,18 +18,24 @@ import gr.james.sampling.LiLSampling
 import kotlinx.coroutines.flow.filter
 import java.io.StringReader
 import java.util.*
+import kotlin.concurrent.atomics.AtomicLong
+import kotlin.time.Duration
 
-fun CommandRegistry.registerAdminCommands(kord: Kord, config: Config) {
+fun CommandRegistry.registerAdminCommands(
+    kord: Kord,
+    config: Config,
+) {
     slash("kill", user = false) {
         description = "Murder."
-        options = listOf(
-            UserOption(
-                name = "victim",
-                description = "Victim of this murder.",
-                optional = true,
-                onParseFailure = ::wrongUserMessage
+        options =
+            listOf(
+                UserOption(
+                    name = "victim",
+                    description = "Victim of this murder.",
+                    optional = true,
+                    onParseFailure = ::wrongUserMessage,
+                ),
             )
-        )
         execute = { author, _, options ->
             withOptionalUserArg(kord, options["victim"] as Snowflake?, author) { victim ->
                 // check permissions
@@ -48,14 +54,15 @@ fun CommandRegistry.registerAdminCommands(kord: Kord, config: Config) {
 
     slash("bean") {
         description = "What happened with the bois at 3AM last night."
-        options = listOf(
-            UserOption(
-                name = "victim",
-                description = "Target of this beaning.",
-                optional = true,
-                onParseFailure = ::wrongUserMessage
+        options =
+            listOf(
+                UserOption(
+                    name = "victim",
+                    description = "Target of this beaning.",
+                    optional = true,
+                    onParseFailure = ::wrongUserMessage,
+                ),
             )
-        )
         execute = { author, _, options ->
             withOptionalUserArg(kord, options["victim"] as Snowflake?, author) { victim ->
                 withPlayerData(victim.id) {
@@ -69,13 +76,14 @@ fun CommandRegistry.registerAdminCommands(kord: Kord, config: Config) {
 
     slash("randomban") {
         description = "Randomly bans someone from this server."
-        options = listOf(
-            BooleanOption(
-                name = "bots",
-                description = "Should Somnus also ban bots? (false by default)",
-                optional = true,
+        options =
+            listOf(
+                BooleanOption(
+                    name = "bots",
+                    description = "Should Somnus also ban bots? (false by default)",
+                    optional = true,
+                ),
             )
-        )
         execute = execute@{ author, guild, options ->
             if (guild == null) {
                 respond {
@@ -114,7 +122,9 @@ fun CommandRegistry.registerAdminCommands(kord: Kord, config: Config) {
                 // We use the REST entity supply strategy to ensure that the member list
                 // is NOT cached, since we'll immediately remove a member from it below.
                 // Note that this requires the GUILD_MEMBERS privileged intent!
-                EntitySupplyStrategy.rest.supply(kord).getGuildMembers(guild.id)
+                EntitySupplyStrategy.rest
+                    .supply(kord)
+                    .getGuildMembers(guild.id)
                     .filter { it.id != self.id && if (banBots) true else !it.isBot }
                     .collect {
                         reservoir.feed(it)
@@ -126,11 +136,12 @@ fun CommandRegistry.registerAdminCommands(kord: Kord, config: Config) {
                 respond {
                     somnusEmbed {
                         color = Constants.ERROR_COLOR
-                        title = if (e.status.code == 403) {
-                            "Somnus requires the `GUILD_MEMBERS` privileged intent to execute a ${prefix}randomban."
-                        } else {
-                            "Couldn't fetch guild member list"
-                        }
+                        title =
+                            if (e.status.code == 403) {
+                                "Somnus requires the `GUILD_MEMBERS` privileged intent to execute a ${prefix}randomban."
+                            } else {
+                                "Couldn't fetch guild member list"
+                            }
                     }
                 }
                 return@execute
@@ -156,7 +167,7 @@ fun CommandRegistry.registerAdminCommands(kord: Kord, config: Config) {
                 try {
                     guild.ban(victim.id) {
                         reason = "!randomban by ${author.username} (${author.id})"
-                        deleteMessagesDays = 0
+                        deleteMessageDuration = Duration.ZERO
                     }
                     respond {
                         somnusEmbed {
@@ -178,12 +189,13 @@ fun CommandRegistry.registerAdminCommands(kord: Kord, config: Config) {
     }
 
     text("massrename") {
-        options = listOf(
-            MessageContentOption(
-                name = "channels",
-                description = "Map of channels to rename, in Java's `Properties` file format."
+        options =
+            listOf(
+                MessageContentOption(
+                    name = "channels",
+                    description = "Map of channels to rename, in Java's `Properties` file format.",
+                ),
             )
-        )
         execute = execute@{ author, guild, options ->
             if (guild == null) {
                 respond {
@@ -250,11 +262,31 @@ fun CommandRegistry.registerAdminCommands(kord: Kord, config: Config) {
                     val id = Snowflake(key as String)
                     val newName = value as String
                     when (val channel = kord.getChannel(id)) {
-                        is TextChannel -> channel.edit { name = newName; reason = renameReason }
-                        is VoiceChannel -> channel.edit { name = newName; reason = renameReason }
-                        is StageChannel -> channel.edit { name = newName; reason = renameReason }
-                        is NewsChannel -> channel.edit { name = newName; reason = renameReason }
-                        is Category -> channel.edit { name = newName; reason = renameReason }
+                        is TextChannel ->
+                            channel.edit {
+                                name = newName
+                                reason = renameReason
+                            }
+                        is VoiceChannel ->
+                            channel.edit {
+                                name = newName
+                                reason = renameReason
+                            }
+                        is StageChannel ->
+                            channel.edit {
+                                name = newName
+                                reason = renameReason
+                            }
+                        is NewsChannel ->
+                            channel.edit {
+                                name = newName
+                                reason = renameReason
+                            }
+                        is Category ->
+                            channel.edit {
+                                name = newName
+                                reason = renameReason
+                            }
                         else -> {
                             succeeded = false
                             continue
@@ -266,11 +298,12 @@ fun CommandRegistry.registerAdminCommands(kord: Kord, config: Config) {
                 succeeded = false
             }
 
-            val succeededChannels = if (succeededRenames.isNotEmpty()) {
-                succeededRenames.joinToString("\n") { "<#$it>" }
-            } else {
-                "None :("
-            }
+            val succeededChannels =
+                if (succeededRenames.isNotEmpty()) {
+                    succeededRenames.joinToString("\n") { "<#$it>" }
+                } else {
+                    "None :("
+                }
             respond {
                 somnusEmbed {
                     if (succeeded) {

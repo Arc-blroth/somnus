@@ -7,16 +7,18 @@ import ai.arcblroth.somnus3.mcserver.ServerInfoProvider
 import ai.arcblroth.somnus3.request
 import dev.kord.common.entity.ButtonStyle
 import dev.kord.core.Kord
-import io.ktor.client.*
+import io.ktor.client.request.forms.ChannelProvider
 import io.ktor.client.statement.*
-import io.ktor.http.*
+import io.ktor.utils.io.ByteReadChannel
 import kotlinx.datetime.Instant
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.decodeFromString
-import java.io.ByteArrayInputStream
 
-fun CommandRegistry.registerIRLCommands(kord: Kord, config: Config, serverInfoProvider: ServerInfoProvider?) {
+fun CommandRegistry.registerIRLCommands(
+    kord: Kord,
+    config: Config,
+    serverInfoProvider: ServerInfoProvider?,
+) {
     slash("server") {
         description = "Check if the Minecraft server is running."
         execute = { _, _, _ ->
@@ -30,17 +32,23 @@ fun CommandRegistry.registerIRLCommands(kord: Kord, config: Config, serverInfoPr
                             description = info.description
                             info.favicon?.let {
                                 thumbnail { url = "attachment://favicon.png" }
-                                addFile("favicon.png", ByteArrayInputStream(it))
+                                this@respond.addFile(
+                                    "favicon.png",
+                                    ChannelProvider {
+                                        ByteReadChannel(it)
+                                    },
+                                )
                             }
                             info.ip?.let { field("IP", false) { it } }
                             info.version?.let { field(info.modpack ?: "Version", true) { it } }
                             info.uptime?.let { field("Uptime", true) { it } }
                             info.playerSample?.let {
-                                val sample = if (it.isNotEmpty()) {
-                                    it.joinToString("\n")
-                                } else {
-                                    "No players right now :("
-                                }
+                                val sample =
+                                    if (it.isNotEmpty()) {
+                                        it.joinToString("\n")
+                                    } else {
+                                        "No players right now :("
+                                    }
                                 field("Players (${info.playersOnline ?: "?"}/${info.playersMax ?: "?"}", false) {
                                     sample
                                 }

@@ -15,7 +15,9 @@ sealed class Option<T>(
     val onParseFailure: ParseFailureCallback? = null,
 ) {
     fun toOptionsBuilder(): OptionsBuilder = toOptionsBuilderInner().apply { required = !optional }
+
     protected abstract fun toOptionsBuilderInner(): OptionsBuilder
+
     abstract fun parse(token: String): T?
 }
 
@@ -26,11 +28,12 @@ class StringOption(
     optional: Boolean = false,
     onParseFailure: ParseFailureCallback?,
 ) : Option<String>(name, description, optional, onParseFailure) {
-    override fun toOptionsBuilderInner() = StringChoiceBuilder(name, description).also { builder ->
-        this@StringOption.choices?.forEach {
-            builder.choice(it.key, it.value)
+    override fun toOptionsBuilderInner() =
+        StringChoiceBuilder(name, description).also { builder ->
+            this@StringOption.choices?.forEach {
+                builder.choice(it.key, it.value)
+            }
         }
-    }
 
     override fun parse(token: String) = if (choices != null && !choices.containsValue(token)) null else token
 }
@@ -52,11 +55,12 @@ class LongOption(
     optional: Boolean = false,
     onParseFailure: ParseFailureCallback?,
 ) : Option<Long>(name, description, optional, onParseFailure) {
-    override fun toOptionsBuilderInner() = IntegerOptionBuilder(name, description).also { builder ->
-        this@LongOption.choices?.forEach {
-            builder.choice(it.key, it.value)
+    override fun toOptionsBuilderInner() =
+        IntegerOptionBuilder(name, description).also { builder ->
+            this@LongOption.choices?.forEach {
+                builder.choice(it.key, it.value)
+            }
         }
-    }
 
     override fun parse(token: String): Long? {
         val long = token.toLongOrNull() ?: return null
@@ -71,11 +75,12 @@ class DoubleOption(
     optional: Boolean = false,
     onParseFailure: ParseFailureCallback?,
 ) : Option<Double>(name, description, optional, onParseFailure) {
-    override fun toOptionsBuilderInner() = NumberOptionBuilder(name, description).also { builder ->
-        this@DoubleOption.choices?.forEach {
-            builder.choice(it.key, it.value)
+    override fun toOptionsBuilderInner() =
+        NumberOptionBuilder(name, description).also { builder ->
+            this@DoubleOption.choices?.forEach {
+                builder.choice(it.key, it.value)
+            }
         }
-    }
 
     override fun parse(token: String): Double? {
         val double = token.toDoubleOrNull() ?: return null

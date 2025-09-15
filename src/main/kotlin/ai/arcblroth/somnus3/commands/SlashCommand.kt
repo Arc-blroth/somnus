@@ -19,8 +19,13 @@ class SlashCommandBuilder {
 @SomnusCommandsDsl
 interface SlashCommandExecutionBuilder {
     fun respond(builder: MessageCreateBuilder.() -> Unit)
+
     fun respondPanel(builder: InteractivePanelBuilder.() -> Unit)
-    fun acknowledge(emoji: ReactionEmoji, message: String)
+
+    fun acknowledge(
+        emoji: ReactionEmoji,
+        message: String,
+    )
 }
 
 @SomnusCommandsDsl

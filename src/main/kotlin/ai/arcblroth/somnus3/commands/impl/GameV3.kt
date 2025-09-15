@@ -10,24 +10,28 @@ import dev.kord.common.entity.Snowflake
 import dev.kord.core.Kord
 
 // Game commands added as part of the Somnus v3 update.
-fun CommandRegistry.registerGameV3Commands(kord: Kord, config: Config) {
+fun CommandRegistry.registerGameV3Commands(
+    kord: Kord,
+    config: Config,
+) {
     slash("bed") {
         description = "Browse our selection of fine and magical beds."
-        options = listOf(
-            StringOption(
-                name = "purchase",
-                description = "Bed type to purchase.",
-                choices = BedType.values().associate { it.uiName to it.name },
-                optional = true,
-                onParseFailure = {
-                    somnusEmbed {
-                        color = Constants.ERROR_COLOR
-                        title = "We don't have that bed in stock!"
-                        description = "Note that bed names are case-sensitive."
-                    }
-                }
+        options =
+            listOf(
+                StringOption(
+                    name = "purchase",
+                    description = "Bed type to purchase.",
+                    choices = BedType.values().associate { it.uiName to it.name },
+                    optional = true,
+                    onParseFailure = {
+                        somnusEmbed {
+                            color = Constants.ERROR_COLOR
+                            title = "We don't have that bed in stock!"
+                            description = "Note that bed names are case-sensitive."
+                        }
+                    },
+                ),
             )
-        )
         execute = { author, _, options ->
             withPlayerData(author.id) {
                 val purchaseType = options["purchase"] as String?
@@ -38,7 +42,11 @@ fun CommandRegistry.registerGameV3Commands(kord: Kord, config: Config) {
                             description = "Use `${prefix}bed <name>` to purchase one of our lovely beds."
                             BedType.values().forEach {
                                 field {
-                                    name = "${if (bedType == it) { ":star:" } else { "$${it.cost}" }} - ${it.uiName}"
+                                    name = "${if (bedType == it) {
+                                        ":star:"
+                                    } else {
+                                        "$${it.cost}"
+                                    }} - ${it.uiName}"
                                     value = "${it.perks?.let { "**$it**\n" } ?: ""}${it.description}"
                                     inline = false
                                 }
@@ -120,14 +128,15 @@ fun CommandRegistry.registerGameV3Commands(kord: Kord, config: Config) {
 
     slash("angel") {
         description = "Query your own or someone else's sleep angel."
-        options = listOf(
-            UserOption(
-                name = "player",
-                description = "Target player.",
-                optional = true,
-                onParseFailure = ::wrongUserMessage
+        options =
+            listOf(
+                UserOption(
+                    name = "player",
+                    description = "Target player.",
+                    optional = true,
+                    onParseFailure = ::wrongUserMessage,
+                ),
             )
-        )
         execute = { author, _, options ->
             withOptionalUserArg(kord, options["player"] as Snowflake?, author) { user ->
                 withAngelData(user.id) {

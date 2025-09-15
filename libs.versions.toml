@@ -1,13 +1,14 @@
 [versions]
-kotlin = "1.7.10"
-ktlint = "11.0.0"
-shadow = "7.1.2"
-slf4j = "1.7.36"
-kord = "0.8.0-M16"
-sqlite-jdbc = "3.39.2.1"
-exposed = "0.39.2"
-cache4k = "0.7.0"
-reservoir-sampling = "0.25"
+kotlin = "2.2.20"
+ktlint = "13.1.0"
+shadow = "9.1.0"
+slf4j = "2.0.17"
+ktor = "3.2.3"
+kord = "0.15.0"
+sqlite-jdbc = "3.50.3.0"
+exposed = "1.0.0-rc-1"
+cache4k = "0.14.0"
+reservoir-sampling = "0.28"
 lavaplayer = "1.3.77"
 owo = "2.1.0"
 
@@ -15,10 +16,11 @@ owo = "2.1.0"
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlin-plugin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlint" }
-shadow = { id = "com.github.johnrengelman.shadow", version.ref = "shadow" }
+shadow = { id = "com.gradleup.shadow", version.ref = "shadow" }
 
 [libraries]
 slf4j-simple = { module = "org.slf4j:slf4j-simple", version.ref = "slf4j" }
+ktor-network = { module = "io.ktor:ktor-network", version.ref = "ktor" }
 kord-core = { module = "dev.kord:kord-core", version.ref = "kord" }
 sqlite-jdbc = { module = "org.xerial:sqlite-jdbc", version.ref = "sqlite-jdbc" }
 exposed-core = { module = "org.jetbrains.exposed:exposed-core", version.ref = "exposed" }

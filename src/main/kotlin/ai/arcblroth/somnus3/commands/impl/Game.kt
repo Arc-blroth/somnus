@@ -17,17 +17,21 @@ import dev.kord.rest.builder.message.create.UserMessageCreateBuilder
 import kotlin.math.abs
 import kotlin.math.floor
 
-fun CommandRegistry.registerGameCommands(kord: Kord, config: Config) {
+fun CommandRegistry.registerGameCommands(
+    kord: Kord,
+    config: Config,
+) {
     slash("stats") {
         description = "Query your own or someone else's stats."
-        options = listOf(
-            UserOption(
-                name = "player",
-                description = "Target player.",
-                optional = true,
-                onParseFailure = ::wrongUserMessage
+        options =
+            listOf(
+                UserOption(
+                    name = "player",
+                    description = "Target player.",
+                    optional = true,
+                    onParseFailure = ::wrongUserMessage,
+                ),
             )
-        )
         execute = { author, _, options ->
             withOptionalUserArg(kord, options["player"] as Snowflake?, author) { user ->
                 withPlayerData(user.id) {
@@ -62,9 +66,10 @@ fun CommandRegistry.registerGameCommands(kord: Kord, config: Config) {
                 val coalFound = floor(random * Constants.DIG_REWARD_MULT + 1).toInt()
                 val knowledgeBonus = knowledgePoints * Constants.DIG_LEARN_MULTI
                 val furryBonus = floor(furryPoints)
-                val actualCoalFound = withAngelData(author.id) {
-                    applyPowerEffects(random * digModifier * (Constants.DIG_REWARD_MULT + knowledgeBonus + furryBonus) + 1)
-                }
+                val actualCoalFound =
+                    withAngelData(author.id) {
+                        applyPowerEffects(random * digModifier * (Constants.DIG_REWARD_MULT + knowledgeBonus + furryBonus) + 1)
+                    }
                 sleepPoints -= Constants.DIG_COST
                 moneyPoints += actualCoalFound
 
@@ -88,9 +93,10 @@ fun CommandRegistry.registerGameCommands(kord: Kord, config: Config) {
                     }
                 } else {
                     val random = Math.random()
-                    val hpGained = withAngelData(author.id) {
-                        applyPowerEffects(random * eatModifier * (Constants.RAMEN_REWARD_MAX - 1) + 1)
-                    }
+                    val hpGained =
+                        withAngelData(author.id) {
+                            applyPowerEffects(random * eatModifier * (Constants.RAMEN_REWARD_MAX - 1) + 1)
+                        }
                     hitPoints += hpGained
                     moneyPoints -= Constants.RAMEN_COST
 
@@ -115,12 +121,13 @@ fun CommandRegistry.registerGameCommands(kord: Kord, config: Config) {
                     }
                 } else {
                     val random = Math.random()
-                    val hpGained = withAngelData(author.id) {
-                        applyPowerEffects(
-                            random * eatModifier * (Constants.MSG_REWARD_MAX - Constants.MSG_REWARD_MIN) + Constants.MSG_REWARD_MIN,
-                            round = true
-                        )
-                    }
+                    val hpGained =
+                        withAngelData(author.id) {
+                            applyPowerEffects(
+                                random * eatModifier * (Constants.MSG_REWARD_MAX - Constants.MSG_REWARD_MIN) + Constants.MSG_REWARD_MIN,
+                                round = true,
+                            )
+                        }
                     hitPoints += hpGained
                     moneyPoints -= Constants.MSG_COST
 
@@ -140,10 +147,17 @@ fun CommandRegistry.registerGameCommands(kord: Kord, config: Config) {
         execute = { author, _, _ ->
             withPlayerData(author.id) {
                 val random = Math.random()
-                val maxKp = Constants.LEARN_REWARD_MAX + if (bedType == BedType.COTTON) { 3 } else { 0 }
-                val kpGained = withAngelData(author.id) {
-                    applyPowerEffects(random * learnModifier * (maxKp - 1) + 1)
-                }
+                val maxKp =
+                    Constants.LEARN_REWARD_MAX +
+                        if (bedType == BedType.COTTON) {
+                            3
+                        } else {
+                            0
+                        }
+                val kpGained =
+                    withAngelData(author.id) {
+                        applyPowerEffects(random * learnModifier * (maxKp - 1) + 1)
+                    }
                 knowledgePoints += kpGained
                 sleepPoints -= Constants.LEARN_COST
 
@@ -162,14 +176,26 @@ fun CommandRegistry.registerGameCommands(kord: Kord, config: Config) {
         execute = { author, _, _ ->
             withPlayerData(author.id) {
                 val random = Math.random()
-                val baseReward = Constants.GAME_REWARD + if (bedType == BedType.POLY) { 2 } else { 0 }
-                val hpGained = withAngelData(author.id) {
-                    applyPowerEffects(random * gameModifier * baseReward + 1)
-                }
+                val baseReward =
+                    Constants.GAME_REWARD +
+                        if (bedType == BedType.POLY) {
+                            2
+                        } else {
+                            0
+                        }
+                val hpGained =
+                    withAngelData(author.id) {
+                        applyPowerEffects(random * gameModifier * baseReward + 1)
+                    }
                 val knowledgeLost = floor(random * Constants.GAME_COST + 1).toInt()
                 knowledgePoints -= knowledgeLost
                 hitPoints += hpGained
-                gamePoints += if (bedType == BedType.POLY) { 2 } else { 1 }
+                gamePoints +=
+                    if (bedType == BedType.POLY) {
+                        2
+                    } else {
+                        1
+                    }
 
                 respond {
                     somnusEmbed {
@@ -187,16 +213,24 @@ fun CommandRegistry.registerGameCommands(kord: Kord, config: Config) {
         execute = { author, guild, _ ->
             withPlayerData(author.id) {
                 val random = Math.random()
-                val baseReward = Constants.GAME_REWARD + if (bedType == BedType.SILK) { 4 } else { 0 }
-                val swagGained = withAngelData(author.id) {
-                    applyPowerEffects(random * worshipModifier * (baseReward + gamePoints) + 1)
-                }
+                val baseReward =
+                    Constants.GAME_REWARD +
+                        if (bedType == BedType.SILK) {
+                            4
+                        } else {
+                            0
+                        }
+                val swagGained =
+                    withAngelData(author.id) {
+                        applyPowerEffects(random * worshipModifier * (baseReward + gamePoints) + 1)
+                    }
                 val sleepLost = floor(random * Constants.WORSHIP_COST + 1).toInt()
                 swagPoints += swagGained
                 sleepPoints -= sleepLost
 
-                val worshipConfig = guild?.let { config.worshipConfig[guild.id] }
-                    ?: Config.WorshipConfig(Constants.SWAG_NAME, Constants.SWAG_IMG)
+                val worshipConfig =
+                    guild?.let { config.worshipConfig[guild.id] }
+                        ?: Config.WorshipConfig(Constants.SWAG_NAME, Constants.SWAG_IMG)
 
                 if (worshipConfig.furry) {
                     if (Math.random() < 0.5) {
@@ -216,17 +250,26 @@ fun CommandRegistry.registerGameCommands(kord: Kord, config: Config) {
     }
 }
 
-suspend fun update(channel: MessageChannelBehavior, author: User) {
+suspend fun update(
+    channel: MessageChannelBehavior,
+    author: User,
+) {
     val response = UserMessageCreateBuilder()
     var hasResponse = false
-    val context = object : SlashCommandExecutionBuilder {
-        override fun respond(builder: MessageCreateBuilder.() -> Unit) {
-            hasResponse = true
-            response.apply(builder)
+    val context =
+        object : SlashCommandExecutionBuilder {
+            override fun respond(builder: MessageCreateBuilder.() -> Unit) {
+                hasResponse = true
+                response.apply(builder)
+            }
+
+            override fun respondPanel(builder: InteractivePanelBuilder.() -> Unit) = throw NotImplementedError()
+
+            override fun acknowledge(
+                emoji: ReactionEmoji,
+                message: String,
+            ) = throw NotImplementedError()
         }
-        override fun respondPanel(builder: InteractivePanelBuilder.() -> Unit) = throw NotImplementedError()
-        override fun acknowledge(emoji: ReactionEmoji, message: String) = throw NotImplementedError()
-    }
 
     with(context) {
         withPlayerData(author.id) {
@@ -263,18 +306,24 @@ suspend fun update(channel: MessageChannelBehavior, author: User) {
     }
 
     if (hasResponse) {
-        channel.kord.rest.channel.createMessage(channel.id, response.toRequest())
+        channel.kord.rest.channel
+            .createMessage(channel.id, response.toRequest())
     }
 }
 
-fun SlashCommandExecutionBuilder.onDeath(victim: User, data: PlayerData, allowSuppress: Boolean) {
-    val showMessage = if (allowSuppress) {
-        withPreferencesData(victim.id) {
-            showDeathMessages
+fun SlashCommandExecutionBuilder.onDeath(
+    victim: User,
+    data: PlayerData,
+    allowSuppress: Boolean,
+) {
+    val showMessage =
+        if (allowSuppress) {
+            withPreferencesData(victim.id) {
+                showDeathMessages
+            }
+        } else {
+            true
         }
-    } else {
-        true
-    }
 
     if (showMessage) {
         respond {

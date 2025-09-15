@@ -158,13 +158,16 @@ enum class AngelType(
         3.0..4.5,
         2.5..3.0,
         2.25..3.25,
-    );
+    ),
+    ;
 
-    enum class Rarity(val color: Color) {
+    enum class Rarity(
+        val color: Color,
+    ) {
         C(Constants.COLOR),
         R(Color(0xc9d0d6)),
         SR(Color(0x6fd1c2)),
-        SSR(Color(0xcfabff))
+        SSR(Color(0xcfabff)),
     }
 
     val summonRate get() = weight.toDouble() / TOTAL_WEIGHT

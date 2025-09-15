@@ -53,10 +53,11 @@ object Constants {
 
     // Data Handling
     @OptIn(ExperimentalSerializationApi::class)
-    val lenientJson = Json {
-        explicitNulls = false
-        ignoreUnknownKeys = true
-        isLenient = true
-        coerceInputValues = true
-    }
+    val lenientJson =
+        Json {
+            explicitNulls = false
+            ignoreUnknownKeys = true
+            isLenient = true
+            coerceInputValues = true
+        }
 }

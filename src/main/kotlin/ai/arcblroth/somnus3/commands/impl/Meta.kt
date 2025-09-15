@@ -7,14 +7,19 @@ import ai.arcblroth.somnus3.commands.CommandRegistry
 import ai.arcblroth.somnus3.data.withPreferencesData
 import dev.kord.core.Kord
 
-fun CommandRegistry.registerMetaCommands(kord: Kord, somnus: Somnus, config: Config) {
+fun CommandRegistry.registerMetaCommands(
+    kord: Kord,
+    somnus: Somnus,
+    config: Config,
+) {
     slash("somnus", "help") {
         description = "son of night, brother of death"
         execute = { _, _, _ ->
             respond {
                 somnusEmbed {
                     title = "Somnus (Kotlin)"
-                    description = """
+                    description =
+                        """
                         God of sleep
                         _son of night, brother of death_
                         
@@ -29,7 +34,7 @@ fun CommandRegistry.registerMetaCommands(kord: Kord, somnus: Somnus, config: Con
                         `!worship` - Increase your swag levels by praying to the god of destruction of the 47th universe.
                         `!showDeathMessages` - Toggle whether or not to show death messages. On by default.
                         `!showWittyMessages` - Toggle whether or not to show automatic responses to messages. On by default.
-                    """.trimIndent()
+                        """.trimIndent()
                 }
             }
         }
@@ -37,13 +42,14 @@ fun CommandRegistry.registerMetaCommands(kord: Kord, somnus: Somnus, config: Con
 
     slash("showdeathmessages") {
         description = "Toggle whether or not to show death messages. On by default."
-        options = listOf(
-            BooleanOption(
-                name = "value",
-                description = "Show death messages?",
-                optional = true,
+        options =
+            listOf(
+                BooleanOption(
+                    name = "value",
+                    description = "Show death messages?",
+                    optional = true,
+                ),
             )
-        )
         execute = { author, _, options ->
             withPreferencesData(author.id) {
                 showDeathMessages = options["value"] as Boolean? ?: !showDeathMessages
@@ -56,13 +62,14 @@ fun CommandRegistry.registerMetaCommands(kord: Kord, somnus: Somnus, config: Con
 
     slash("showwittymessages") {
         description = "Toggle whether or not to send automatic responses to messages (eg \"nice\"). On by default."
-        options = listOf(
-            BooleanOption(
-                name = "value",
-                description = "Send witty responses?",
-                optional = true,
+        options =
+            listOf(
+                BooleanOption(
+                    name = "value",
+                    description = "Send witty responses?",
+                    optional = true,
+                ),
             )
-        )
         execute = { author, _, options ->
             withPreferencesData(author.id) {
                 showWittyMessages = options["value"] as Boolean? ?: !showWittyMessages
@@ -75,13 +82,14 @@ fun CommandRegistry.registerMetaCommands(kord: Kord, somnus: Somnus, config: Con
 
     slash("showkittymessages") {
         description = "Toggle whether or not to cat. Off by default."
-        options = listOf(
-            BooleanOption(
-                name = "value",
-                description = "Send kitty responses?",
-                optional = true,
+        options =
+            listOf(
+                BooleanOption(
+                    name = "value",
+                    description = "Send kitty responses?",
+                    optional = true,
+                ),
             )
-        )
         execute = { author, _, options ->
             withPreferencesData(author.id) {
                 showKittyMessages = options["value"] as Boolean? ?: !showKittyMessages

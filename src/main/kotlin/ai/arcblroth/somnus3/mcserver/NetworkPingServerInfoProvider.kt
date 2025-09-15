@@ -8,7 +8,6 @@ import io.ktor.util.*
 import io.ktor.utils.io.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
@@ -18,38 +17,45 @@ import java.io.ByteArrayOutputStream
 import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
 
-class NetworkPingServerInfoProvider(val ip: String, val port: Int) : ServerInfoProvider {
+class NetworkPingServerInfoProvider(
+    val ip: String,
+    val port: Int,
+) : ServerInfoProvider {
     override suspend fun get(): ServerInfo {
-        val stringResult = aSocket(ActorSelectorManager(Dispatchers.IO)).tcp().connect(ip, port) {
-            socketTimeout = 3000
-        }.use { socket ->
-            socket.openWriteChannel(autoFlush = true).run {
-                val ping = ByteArrayOutputStream()
-                val packet = ByteArrayOutputStream()
-                packet.write(0) // Protocol
-                packet.write(0) // End Varint
-                packet.write(packData(ip.toByteArray(StandardCharsets.UTF_8))) // IP
-                packet.write(port shr 8 and 0xff) // Port
-                packet.write(port and 0xff)
-                packet.write(1) // Request Status
-                ping.write(packData(packet.toByteArray()))
-                ping.write(1)
-                ping.write(0)
-                writeFully(ByteBuffer.wrap(ping.toByteArray()))
-            }
-            socket.openReadChannel().run {
-                popInt()
-                popInt()
-                val length = popInt()
-                val messageBytes = ByteArray(length)
-                readFully(messageBytes, 0, length)
-                String(messageBytes)
-            }
-        }
+        val stringResult =
+            aSocket(ActorSelectorManager(Dispatchers.IO))
+                .tcp()
+                .connect(ip, port) {
+                    socketTimeout = 3000
+                }.use { socket ->
+                    socket.openWriteChannel(autoFlush = true).run {
+                        val ping = ByteArrayOutputStream()
+                        val packet = ByteArrayOutputStream()
+                        packet.write(0) // Protocol
+                        packet.write(0) // End Varint
+                        packet.write(packData(ip.toByteArray(StandardCharsets.UTF_8))) // IP
+                        packet.write(port shr 8 and 0xff) // Port
+                        packet.write(port and 0xff)
+                        packet.write(1) // Request Status
+                        ping.write(packData(packet.toByteArray()))
+                        ping.write(1)
+                        ping.write(0)
+                        writeFully(ByteBuffer.wrap(ping.toByteArray()))
+                    }
+                    socket.openReadChannel().run {
+                        popInt()
+                        popInt()
+                        val length = popInt()
+                        val messageBytes = ByteArray(length)
+                        readFully(messageBytes, 0, length)
+                        String(messageBytes)
+                    }
+                }
 
-        val response = Constants.lenientJson.decodeFromString<PingResponse>(
-            stringResult.replace(Regex("\u00A7[0-9a-fk-orA-FK-OR]"), "")
-        )
+        val response =
+            Constants.lenientJson.decodeFromString<PingResponse>(
+                stringResult.replace(Regex("\u00A7[0-9a-fk-orA-FK-OR]"), ""),
+            )
         return ServerInfo(
             description = response.description?.text,
             favicon = response.favicon?.substring("data:image/png;base64,".length)?.decodeBase64Bytes(),
@@ -58,17 +64,22 @@ class NetworkPingServerInfoProvider(val ip: String, val port: Int) : ServerInfoP
             version = response.version?.name,
             playersOnline = response.players?.online,
             playersMax = response.players?.max,
-            playerSample = response.players?.sample?.mapNotNull { it.name }?.toTypedArray(),
+            playerSample =
+                response.players
+                    ?.sample
+                    ?.mapNotNull { it.name }
+                    ?.toTypedArray(),
         )
     }
 
     companion object {
-        fun fromConfig(config: Config) = if (config.mcServerIP.isNullOrBlank()) {
-            null
-        } else {
-            val addr = config.mcServerIP.split(":")
-            NetworkPingServerInfoProvider(addr[0], addr[1].toInt())
-        }
+        fun fromConfig(config: Config) =
+            if (config.mcServerIP.isNullOrBlank()) {
+                null
+            } else {
+                val addr = config.mcServerIP.split(":")
+                NetworkPingServerInfoProvider(addr[0], addr[1].toInt())
+            }
 
         private fun packData(d: ByteArray): ByteArray {
             val out = ByteArrayOutputStream()
@@ -114,16 +125,28 @@ private data class PingResponse(
     val favicon: String?,
 ) {
     @Serializable
-    data class Version(val name: String?, val protocol: Int?)
+    data class Version(
+        val name: String?,
+        val protocol: Int?,
+    )
 
     @Serializable
-    data class Players(val max: Int?, val online: Int?, val sample: List<Player>?)
+    data class Players(
+        val max: Int?,
+        val online: Int?,
+        val sample: List<Player>?,
+    )
 
     @Serializable
-    data class Player(val name: String?, val id: String?)
+    data class Player(
+        val name: String?,
+        val id: String?,
+    )
 
     @Serializable
-    data class Description(val text: String?)
+    data class Description(
+        val text: String?,
+    )
 }
 
 private object DescriptionSerializer : JsonTransformingSerializer<PingResponse.Description>(serializer<PingResponse.Description>()) {

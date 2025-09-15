@@ -34,8 +34,18 @@ fun SlashCommandExecutionBuilder.isTextCommand() = this is TextBasedSlashCommand
 
 val SlashCommandExecutionBuilder.prefix get() = if (isTextCommand()) Constants.PREFIX else "/"
 
-fun PlayerData.applyPowerEffects(modifier: Double, round: Boolean = false) = when (bedType) {
+fun PlayerData.applyPowerEffects(
+    modifier: Double,
+    round: Boolean = false,
+) = when (bedType) {
     BedType.GOLD -> ceil(modifier * 1.25).toInt()
     BedType.DEMON -> ceil(modifier * 1.5).toInt()
-    else -> (if (round) { round(modifier) } else { floor(modifier) }).toInt()
+    else ->
+        (
+            if (round) {
+                round(modifier)
+            } else {
+                floor(modifier)
+            }
+        ).toInt()
 }

@@ -9,7 +9,6 @@ import ai.arcblroth.somnus3.mcserver.ServerInfoProvider
 import ai.arcblroth.somnus3.panel.InteractivePanel
 import ai.arcblroth.somnus3.panel.InteractivePanelBuilder
 import ai.arcblroth.somnus3.panel.InteractivePanelBuilderImpl
-import ai.arcblroth.somnus3.soundboard.SoundboardManager
 import dev.kord.common.entity.ActivityType
 import dev.kord.common.entity.Snowflake
 import dev.kord.core.Kord
@@ -23,15 +22,14 @@ import dev.kord.core.event.interaction.ButtonInteractionCreateEvent
 import dev.kord.core.event.interaction.GuildApplicationCommandInteractionCreateEvent
 import dev.kord.core.event.message.MessageCreateEvent
 import dev.kord.core.event.user.PresenceUpdateEvent
-import dev.kord.core.event.user.VoiceStateUpdateEvent
 import dev.kord.core.on
 import dev.kord.gateway.Intent
 import dev.kord.gateway.PrivilegedIntent
 import dev.kord.gateway.builder.PresenceBuilder
+import dev.kord.rest.builder.message.actionRow
 import dev.kord.rest.builder.message.create.MessageCreateBuilder
 import dev.kord.rest.builder.message.create.UserMessageCreateBuilder
-import dev.kord.rest.builder.message.create.actionRow
-import dev.kord.rest.builder.message.create.embed
+import dev.kord.rest.builder.message.embed
 import dev.maow.owo.util.Options
 import dev.maow.owo.util.OwOFactory
 import io.github.reactivecircus.cache4k.Cache
@@ -41,19 +39,27 @@ import java.io.IOException
 import java.nio.file.Paths
 import kotlin.time.Duration.Companion.minutes
 
-class Somnus(private val config: Config, private val serverInfoProvider: ServerInfoProvider?) {
+class Somnus(
+    private val config: Config,
+    private val serverInfoProvider: ServerInfoProvider?,
+) {
     private val activityDetectors: MutableList<ActivityDetector> = mutableListOf()
-    private val panels: Cache<Snowflake, InteractivePanel> = Cache.Builder().expireAfterWrite(5.minutes).build()
+    private val panels: Cache<Snowflake, InteractivePanel> =
+        Cache
+            .Builder<Snowflake, InteractivePanel>()
+            .expireAfterWrite(
+                5.minutes,
+            ).build()
     private val owofier = OwOFactory.INSTANCE.create(Options.defaults().apply { addSuffix(", meow!") })
-    val soundboardManager = SoundboardManager()
 
     suspend fun start() {
         start {
             when (config.statusType) {
-                ActivityType.Streaming -> streaming(
-                    config.status.substringBefore(","),
-                    config.status.substringAfter(","),
-                )
+                ActivityType.Streaming ->
+                    streaming(
+                        config.status.substringBefore(","),
+                        config.status.substringAfter(","),
+                    )
                 ActivityType.Listening -> listening(config.status)
                 ActivityType.Watching -> watching(config.status)
                 ActivityType.Competing -> competing(config.status)
@@ -91,16 +97,18 @@ class Somnus(private val config: Config, private val serverInfoProvider: ServerI
             val author = message.author
             if (author != null && allowOnServer(message)) {
                 val command = message.content.trim()
-                val strippedCommand = command
-                    .replace(Constants.MENTION_FILTER, "")
-                    .replace(Constants.CHANNEL_FILTER, "")
-                    .replace(Constants.EMOJI_FILTER, "")
-                    .replace(Constants.TIMESTAMP_FILTER, "")
+                val strippedCommand =
+                    command
+                        .replace(Constants.MENTION_FILTER, "")
+                        .replace(Constants.CHANNEL_FILTER, "")
+                        .replace(Constants.EMOJI_FILTER, "")
+                        .replace(Constants.TIMESTAMP_FILTER, "")
                 val tokens = command.split(Regex("\\s+?"))
 
-                val (showWittyMessages, showKittyMessages) = withPreferencesData(author.id) {
-                    showWittyMessages to showKittyMessages
-                }
+                val (showWittyMessages, showKittyMessages) =
+                    withPreferencesData(author.id) {
+                        showWittyMessages to showKittyMessages
+                    }
 
                 if (showWittyMessages) {
                     handleWittyResponses(message, author, strippedCommand, tokens)
@@ -135,27 +143,26 @@ class Somnus(private val config: Config, private val serverInfoProvider: ServerI
             }
         }
 
-        kord.on<VoiceStateUpdateEvent> {
-            soundboardManager.update(this)
-        }
-
         suspend fun bakePerGuildChannelMap(map: Map<Snowflake, Snowflake>) =
-            map.mapValues { kord.getChannel(it.value) as? TextChannel? }
+            map
+                .mapValues { kord.getChannel(it.value) as? TextChannel? }
                 .filterValues { it != null }
                 .mapValues { it.value!! }
 
         if (config.enableActivityDetectors) {
             val leagueConfig = bakePerGuildChannelMap(config.leagueDetectorConfig!!)
-            val leagueDetector = ActivityDetector(leagueConfig, "@%s is playing **LEAGUE OF LEGENDS**") {
-                it.applicationId in config.leagueAppIds &&
-                    it.name.equals("league of legends", ignoreCase = true) &&
-                    it.state.equals("in game", ignoreCase = true)
-            }
+            val leagueDetector =
+                ActivityDetector(leagueConfig, "@%s is playing **LEAGUE OF LEGENDS**") {
+                    it.applicationId in config.leagueAppIds &&
+                        it.name.equals("league of legends", ignoreCase = true) &&
+                        it.state.equals("in game", ignoreCase = true)
+                }
 
             val intellijConfig = bakePerGuildChannelMap(config.intellijDetectorConfig!!)
-            val intellijDetector = ActivityDetector(intellijConfig, "@%s is writing bugs again") {
-                it.applicationId in config.intellijAppIds
-            }
+            val intellijDetector =
+                ActivityDetector(intellijConfig, "@%s is writing bugs again") {
+                    it.applicationId in config.intellijAppIds
+                }
 
             activityDetectors.add(leagueDetector)
             activityDetectors.add(intellijDetector)
@@ -173,7 +180,12 @@ class Somnus(private val config: Config, private val serverInfoProvider: ServerI
         }
     }
 
-    private suspend fun handleWittyResponses(message: Message, author: User, strippedCommand: String, tokens: List<String>) {
+    private suspend fun handleWittyResponses(
+        message: Message,
+        author: User,
+        strippedCommand: String,
+        tokens: List<String>,
+    ) {
         // nice
         if (strippedCommand.contains("69") || strippedCommand.contains("420")) {
             message.respond("<@!${author.id}> nice")
@@ -198,11 +210,17 @@ class Somnus(private val config: Config, private val serverInfoProvider: ServerI
         }
     }
 
-    private suspend fun handleKittyResponses(message: Message, strippedCommand: String) {
+    private suspend fun handleKittyResponses(
+        message: Message,
+        strippedCommand: String,
+    ) {
         message.respond(this uwu strippedCommand)
     }
 
-    fun registerInteractivePanel(id: Snowflake, panel: InteractivePanel) {
+    fun registerInteractivePanel(
+        id: Snowflake,
+        panel: InteractivePanel,
+    ) {
         panels.put(id, panel)
     }
 
@@ -231,9 +249,10 @@ class Somnus(private val config: Config, private val serverInfoProvider: ServerI
         }
     }
 
-    private suspend fun allowOnServer(source: Message) = source.getGuildOrNull()?.id?.let {
-        it in config.allowedServers
-    } ?: true
+    private suspend fun allowOnServer(source: Message) =
+        source.getGuildOrNull()?.id?.let {
+            it in config.allowedServers
+        } ?: true
 }
 
 suspend inline fun Message.respond(content: String) {
@@ -242,13 +261,12 @@ suspend inline fun Message.respond(content: String) {
     }
 }
 
-suspend inline fun Message.respond(builder: UserMessageCreateBuilder.() -> Unit): Message? {
-    return if (this.author != null) {
+suspend inline fun Message.respond(builder: UserMessageCreateBuilder.() -> Unit): Message? =
+    if (this.author != null) {
         this.channel.createMessage(builder)
     } else {
         null
     }
-}
 
 fun MessageCreateBuilder.respondPanel(builder: InteractivePanelBuilder.() -> Unit): InteractivePanel {
     val panel = InteractivePanelBuilderImpl().apply(builder).build()

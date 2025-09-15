@@ -1,6 +1,6 @@
 package ai.arcblroth.somnus3.data
 
-import org.jetbrains.exposed.dao.id.IntIdTable
+import org.jetbrains.exposed.v1.core.dao.id.IntIdTable
 
 open class PlayerSnowflakeIdTable : SnowflakeIdTable(columnName = "playerSnowflake") {
     val playerSnowflake by ::id

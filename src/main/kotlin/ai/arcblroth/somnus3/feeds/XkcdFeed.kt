@@ -18,14 +18,16 @@ import kotlinx.datetime.Instant
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationException
-import kotlinx.serialization.decodeFromString
 import org.slf4j.LoggerFactory
 import kotlin.time.Duration.Companion.minutes
 
 object XkcdFeed {
     private val LOGGER = LoggerFactory.getLogger("XkcdFeed")
 
-    suspend fun start(kord: Kord, config: Map<Snowflake, TextChannel>) = kord.coroutineScope.launch {
+    suspend fun start(
+        kord: Kord,
+        config: Map<Snowflake, TextChannel>,
+    ) = kord.coroutineScope.launch {
         while (true) {
             try {
                 val response = request("https://xkcd.com/info.0.json")

@@ -8,13 +8,16 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.job
 
-val SOMNUS_VERSION = Somnus::class.java.`package`.implementationVersion?.removeSuffix("-SNAPSHOT")
+val SOMNUS_VERSION =
+    Somnus::class.java.`package`.implementationVersion
+        ?.removeSuffix("-SNAPSHOT")
 private val USER_AGENT = "Somnus/${SOMNUS_VERSION ?: "3.0"}"
 
-suspend fun request(url: String) = HttpClient().request {
-    userAgent(USER_AGENT)
-    url(url)
-}
+suspend fun request(url: String) =
+    HttpClient().request {
+        userAgent(USER_AGENT)
+        url(url)
+    }
 
 /**
  * Constructs a coroutine scope in Kord's default coroutine context.

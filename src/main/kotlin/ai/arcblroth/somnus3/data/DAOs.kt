@@ -1,11 +1,13 @@
 package ai.arcblroth.somnus3.data
 
 import dev.kord.common.entity.Snowflake
-import org.jetbrains.exposed.dao.IntEntity
-import org.jetbrains.exposed.dao.IntEntityClass
-import org.jetbrains.exposed.dao.id.EntityID
+import org.jetbrains.exposed.v1.core.dao.id.EntityID
+import org.jetbrains.exposed.v1.dao.IntEntity
+import org.jetbrains.exposed.v1.dao.IntEntityClass
 
-class PlayerData(id: EntityID<Snowflake>) : SnowflakeEntity(id) {
+class PlayerData(
+    id: EntityID<Snowflake>,
+) : SnowflakeEntity(id) {
     companion object : SnowflakeEntityClass<PlayerData>(PlayerDataTable)
 
     var lastDailyRewardTime by PlayerDataTable.lastDailyRewardTime
@@ -19,7 +21,9 @@ class PlayerData(id: EntityID<Snowflake>) : SnowflakeEntity(id) {
     var bedType by PlayerDataTable.bedType
 }
 
-class AngelData(id: EntityID<Snowflake>) : SnowflakeEntity(id) {
+class AngelData(
+    id: EntityID<Snowflake>,
+) : SnowflakeEntity(id) {
     companion object : SnowflakeEntityClass<AngelData>(AngelDataTable)
 
     var angelType by AngelDataTable.type
@@ -30,7 +34,9 @@ class AngelData(id: EntityID<Snowflake>) : SnowflakeEntity(id) {
     var worshipModifier by AngelDataTable.worshipModifier
 }
 
-class PreferencesData(id: EntityID<Snowflake>) : SnowflakeEntity(id) {
+class PreferencesData(
+    id: EntityID<Snowflake>,
+) : SnowflakeEntity(id) {
     companion object : SnowflakeEntityClass<PreferencesData>(PreferencesDataTable)
 
     var showDeathMessages by PreferencesDataTable.showDeathMessages
@@ -38,7 +44,9 @@ class PreferencesData(id: EntityID<Snowflake>) : SnowflakeEntity(id) {
     var showKittyMessages by PreferencesDataTable.showKittyMessages
 }
 
-class CounterData(id: EntityID<Int>) : IntEntity(id) {
+class CounterData(
+    id: EntityID<Int>,
+) : IntEntity(id) {
     companion object : IntEntityClass<CounterData>(CounterDataTable)
 
     var name by CounterDataTable.name

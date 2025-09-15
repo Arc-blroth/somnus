@@ -4,7 +4,10 @@ import dev.kord.common.entity.ButtonStyle
 import dev.kord.rest.builder.message.EmbedBuilder
 import dev.kord.rest.builder.message.modify.MessageModifyBuilder
 
-class InteractivePanel(val style: ButtonStyle, val pages: List<InteractivePanelPage>) {
+class InteractivePanel(
+    val style: ButtonStyle,
+    val pages: List<InteractivePanelPage>,
+) {
     private var lastBuiltPage = -1
     private var page = 0
 
@@ -32,6 +35,7 @@ typealias InteractivePanelPage = EmbedBuilder.() -> Unit
 
 interface InteractivePanelBuilder {
     fun style(style: ButtonStyle)
+
     fun page(page: InteractivePanelPage)
 }
 

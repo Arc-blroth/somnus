@@ -7,17 +7,20 @@ import ai.arcblroth.somnus3.data.PlayerData
 import dev.kord.core.entity.User
 import dev.kord.rest.builder.message.EmbedBuilder
 import dev.kord.rest.builder.message.create.MessageCreateBuilder
-import dev.kord.rest.builder.message.create.embed
+import dev.kord.rest.builder.message.embed
 import kotlinx.datetime.Clock
 import java.util.stream.Collectors
 
 /**
  * Adds an embed to this message in the standardized format used for most of Somnus' functions.
  */
-fun MessageCreateBuilder.somnusEmbed(thumbnailUser: User? = null, block: EmbedBuilder.() -> Unit) {
+fun MessageCreateBuilder.somnusEmbed(
+    thumbnailUser: User? = null,
+    block: EmbedBuilder.() -> Unit,
+) {
     embed {
         color = Constants.COLOR
-        thumbnail = thumbnailUser?.avatar?.url?.let { url -> EmbedBuilder.Thumbnail().also { it.url = url } }
+        thumbnail = thumbnailUser?.avatar?.cdnUrl?.let { url -> EmbedBuilder.Thumbnail().also { it.url = url.toUrl() } }
         footer { text = Constants.FOOTER }
         timestamp = Clock.System.now()
 
@@ -34,7 +37,10 @@ fun MessageCreateBuilder.somnusEmbed(thumbnailUser: User? = null, block: EmbedBu
 /**
  * Error message for malformed [UserOption]s.
  */
-fun wrongUserMessage(builder: MessageCreateBuilder, target: String) {
+fun wrongUserMessage(
+    builder: MessageCreateBuilder,
+    target: String,
+) {
     builder.somnusEmbed {
         color = Constants.ERROR_COLOR
         title = "Could not find target user."
@@ -51,7 +57,11 @@ fun MessageCreateBuilder.wrongUserMessage(target: String) = wrongUserMessage(thi
 /**
  * Error message for not having enough money to buy an item.
  */
-fun MessageCreateBuilder.poorMessage(author: User, type: String, cost: Int) {
+fun MessageCreateBuilder.poorMessage(
+    author: User,
+    type: String,
+    cost: Int,
+) {
     somnusEmbed {
         color = Constants.ERROR_COLOR
         title = "${author.username} doesn't have enough money to buy $type"
@@ -74,18 +84,22 @@ fun MessageCreateBuilder.sudoFailMessage(author: User) {
 /**
  * Message shown on death.
  */
-fun MessageCreateBuilder.deathMessage(author: User, data: PlayerData, bean: Boolean) {
+fun MessageCreateBuilder.deathMessage(
+    author: User,
+    data: PlayerData,
+    bean: Boolean,
+) {
     somnusEmbed(thumbnailUser = author) {
         title = "${author.username} has Died${if (bean) "?" else "!"}"
         field("Stats") {
             """
-                :zzz: ${data.sleepPoints}
-                :brain: ${data.knowledgePoints}
-                :money_with_wings: ${data.moneyPoints}
-                :video_game: ${data.gamePoints}
-                :sunglasses: ${data.swagPoints}
-                :chipmunk: ${data.furryPoints.toInt()}
-                :bed: ${data.bedType.uiName}
+            :zzz: ${data.sleepPoints}
+            :brain: ${data.knowledgePoints}
+            :money_with_wings: ${data.moneyPoints}
+            :video_game: ${data.gamePoints}
+            :sunglasses: ${data.swagPoints}
+            :chipmunk: ${data.furryPoints.toInt()}
+            :bed: ${data.bedType.uiName}
             """.trimIndent()
         }
     }
@@ -99,16 +113,18 @@ fun EmbedBuilder.angelStats(data: AngelData) {
         color = angelType.rarity.color
 
         thumbnail {
-            url = angelType.uiEmoji.codePoints().mapToObj { it.toString(16).lowercase() }.collect(
-                Collectors.joining("-", "https://raw.githubusercontent.com/twitter/twemoji/master/assets/72x72/", ".png")
-            )
+            url =
+                angelType.uiEmoji.codePoints().mapToObj { it.toString(16).lowercase() }.collect(
+                    Collectors.joining("-", "https://raw.githubusercontent.com/twitter/twemoji/master/assets/72x72/", ".png"),
+                )
         }
 
-        description = if (angelType.hpDamageModifier == 1) {
-            angelType.flavor
-        } else {
-            angelType.flavor + "\n**WARNING**: This angel increases the amount of HP you lose per day!"
-        }
+        description =
+            if (angelType.hpDamageModifier == 1) {
+                angelType.flavor
+            } else {
+                angelType.flavor + "\n**WARNING**: This angel increases the amount of HP you lose per day!"
+            }
 
         field("Sleep", false) { formatModifier(angelType.sleepModifier) }
         if (angelType.hpDamageModifier != 1) {
